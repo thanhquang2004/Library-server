@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
 
 const AuthorSchema = new mongoose.Schema({
+  authorId: String,
   name: String,
-  description: String
+  description: String,
+  birthDate: Date,
+  nationality: String,
+  books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Author', AuthorSchema);
