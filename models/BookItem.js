@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
 
 const BookItemSchema = new mongoose.Schema({
+  bookItemId: { type: String },
   book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book' },
   barcode: String,
   isReferenceOnly: { type: Boolean, default: false },
-  borrowed: Date,
-  dueDate: Date,
   price: Number,
   status: { type: String, enum: ['available', 'reserved', 'loaned', 'lost'], default: 'available' },
   dateOfPurchase: Date,
-  placedAt: {
-    rack: { type: mongoose.Schema.Types.ObjectId, ref: 'Rack' },
-    locationIdentifier: String
+  rack: {
+    rack: { type: mongoose.Schema.Types.ObjectId, ref: 'Rack' }
   }
 }, { timestamps: true });
 
