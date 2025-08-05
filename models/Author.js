@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const AuthorSchema = new mongoose.Schema({
-  authorId: String,
   name: String,
   description: String,
   birthDate: Date,
