@@ -1,7 +1,7 @@
-# Library Server
+# Library Server 
 
 ## Mô tả
-Đây là dự án backend sử dụng **Node.js** và **Express** để xây dựng API cho ứng dụng. Dự án được quản lý mã nguồn bằng Git với quy trình Git Workflow sử dụng các nhánh `main`, `develop`, và các nhánh `feature/*`.
+Đây là dự án backend sử dụng **Node.js** và **Express** để xây dựng API cho ứng dụng. Dự án được quản lý mã nguồn bằng Git với quy trình Git Workflow sử dụng các nhánh `main`, `develop`, và các nhánh `feature/*`
 
 ## Yêu cầu
 - Node.js (phiên bản 18 trở lên)
