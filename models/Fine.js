@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const FineSchema = new mongoose.Schema({
-  fineId: String,
   member: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   bookLending: { type: mongoose.Schema.Types.ObjectId, ref: 'BookLending' },
   amount: Number,
