@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const BookItemSchema = new mongoose.Schema({
-  bookItemId: { type: String },
+  bookItemId: String,
   book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book' },
   barcode: String,
   isReferenceOnly: { type: Boolean, default: false },
