@@ -1,34 +1,68 @@
 const mongoose = require("mongoose");
-
-const LibraryCardSchema = new mongoose.Schema({
-  cardNumber: String,
-  issued: Date,
-  active: { type: Boolean, default: true },
-});
+const bcrypt = require("bcryptjs");
+const AuditLog = require("./AuditLog"); // Giả sử có model AuditLog
 
 const UserSchema = new mongoose.Schema(
   {
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
-    address: String,
-    phone: String,
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, index: true },
+    password: { type: String, required: true },
     role: {
       type: String,
       enum: ["member", "librarian", "admin"],
-      default: "member",
+      required: true,
     },
-    dateOfMembership: Date,
-    totalBooksCheckedOut: { type: Number, default: 0 },
+    address: { type: String },
+    phone: { type: String },
+    dateOfMembership: { type: Date, default: Date.now },
+    totalBooksCheckedout: { type: Number, default: 0 },
     accountStatus: {
       type: String,
       enum: ["active", "blocked"],
       default: "active",
     },
-    libraryCard: LibraryCardSchema,
+    libraryCard: { type: mongoose.Schema.Types.ObjectId, ref: "LibraryCard" },
     fines: [{ type: mongoose.Schema.Types.ObjectId, ref: "Fine" }],
+    preferences: [{ type: String }],
+    language: { type: String, default: "vi" },
+    lastLogin: { type: Date },
+    isDeleted: { type: Boolean, default: false }, // Hỗ trợ xóa mềm
   },
   { timestamps: true }
 );
+
+// Mã hóa mật khẩu trước khi lưu
+UserSchema.pre("save", async function (next) {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+// So sánh mật khẩu
+UserSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+// Kiểm tra vai trò
+UserSchema.methods.hasRole = function (role) {
+  return this.role === role;
+};
+
+// Ghi nhật ký hành động
+UserSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 module.exports = mongoose.model("User", UserSchema);
