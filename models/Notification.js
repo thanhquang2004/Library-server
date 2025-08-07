@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const AuditLog = require("./AuditLog"); // Giả sử có model AuditLog
+const AuditLog = require("./AuditLog");
 
 const NotificationSchema = new mongoose.Schema(
   {
@@ -29,7 +29,7 @@ const NotificationSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
-    }, // Hỗ trợ xóa mềm
+    },
   },
   { timestamps: true }
 );

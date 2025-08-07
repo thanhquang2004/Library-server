@@ -3,19 +3,18 @@ const AuditLog = require("./AuditLog");
 
 const BookSchema = new mongoose.Schema(
   {
+    title: {
+      type: String,
+      required: true,
+    },
     isbn: {
       type: String,
       required: true,
       unique: true,
     },
-    title: {
-      type: String,
-      required: true,
-    },
-    authors: [
+    categories: [
       {
         type: String,
-        required: true,
       },
     ],
     publisher: {
@@ -24,20 +23,29 @@ const BookSchema = new mongoose.Schema(
     publicationDate: {
       type: Date,
     },
-    edition: {
+    language: {
+      type: String,
+      default: "vi",
+    },
+    numberOfPages: {
       type: Number,
     },
-    categories: [
+    format: {
+      type: String,
+      enum: ["hardcover", "paperback", "ebook"],
+    },
+    authors: [
       {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Author",
+        required: true,
       },
     ],
-    description: {
+    digitalUrl: {
       type: String,
     },
-    totalItems: {
-      type: Number,
-      default: 0,
+    coverImage: {
+      type: String,
     },
     isDeleted: {
       type: Boolean,
@@ -48,7 +56,7 @@ const BookSchema = new mongoose.Schema(
 );
 
 // Tạo chỉ mục cho tìm kiếm nhanh
-BookSchema.index({ title: "text", authors: "text", categories: "text" });
+BookSchema.index({ title: "text", categories: "text" });
 
 // Ghi nhật ký hành động
 BookSchema.statics.logAction = async function (
