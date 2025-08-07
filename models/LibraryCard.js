@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const AuditLog = require("./AuditLog"); // Giả sử có model AuditLog
+const AuditLog = require("./AuditLog");
 
 const LibraryCardSchema = new mongoose.Schema(
   {
@@ -25,7 +25,7 @@ const LibraryCardSchema = new mongoose.Schema(
     isDeleted: {
       type: Boolean,
       default: false,
-    }, // Hỗ trợ xóa mềm
+    },
   },
   { timestamps: true }
 );

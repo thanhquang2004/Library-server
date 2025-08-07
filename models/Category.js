@@ -1,24 +1,20 @@
 const mongoose = require("mongoose");
 const AuditLog = require("./AuditLog");
 
-const RackSchema = new mongoose.Schema(
+const CategorySchema = new mongoose.Schema(
   {
-    code: {
+    name: {
       type: String,
       required: true,
       unique: true,
     },
-    library: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Library",
-      required: true,
-    },
-    locationIdentifier: {
+    description: {
       type: String,
     },
-    capacity: {
-      type: Number,
-      required: true,
+    parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      default: null,
     },
     isDeleted: {
       type: Boolean,
@@ -29,10 +25,10 @@ const RackSchema = new mongoose.Schema(
 );
 
 // Tạo chỉ mục cho truy vấn nhanh
-RackSchema.index({ library: 1 });
+CategorySchema.index({ parent: 1 });
 
 // Ghi nhật ký hành động
-RackSchema.statics.logAction = async function (
+CategorySchema.statics.logAction = async function (
   userId,
   action,
   target,
@@ -47,4 +43,4 @@ RackSchema.statics.logAction = async function (
   });
 };
 
-module.exports = mongoose.model("Rack", RackSchema);
+module.exports = mongoose.model("Category", CategorySchema);
