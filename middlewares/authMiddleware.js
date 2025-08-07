@@ -25,19 +25,10 @@ exports.auth = async (req, res, next) => {
 };
 
 // Kiểm tra quyền Librarian hoặc Admin
-exports.isLibrarian = (req, res, next) => {
+exports.isLibrarianOrAdmin = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: "Not authenticated" });
   if (req.user.role === "librarian" || req.user.role === "admin") {
     return next();
   }
   return res.status(403).json({ message: "Forbidden: Librarian/Admin only" });
-};
-
-// (Tuỳ chọn) Kiểm tra quyền Admin
-exports.isAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-  if (req.user.role === "admin") {
-    return next();
-  }
-  return res.status(403).json({ message: "Forbidden: Admin only" });
 };

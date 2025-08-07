@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const lendingController = require("../controllers/lendingController");
-const { auth, isLibrarian } = require("../middlewares/authMiddleware");
+const { auth, isLibrarianOrAdmin } = require("../middlewares/authMiddleware");
 
-router.get("/", auth, isLibrarian, lendingController.getLendings);
-router.get("/:id", auth, isLibrarian, lendingController.getLendingById);
-router.post("/", auth, isLibrarian, lendingController.createLending);
-router.put("/:id/return", auth, isLibrarian, lendingController.returnLending);
+router.get("/", auth, isLibrarianOrAdmin, lendingController.getLendings);
+router.get("/:id", auth, isLibrarianOrAdmin, lendingController.getLendingById);
+router.post("/", auth, isLibrarianOrAdmin, lendingController.createLending);
+router.put("/:id/return", auth, isLibrarianOrAdmin, lendingController.returnLending);
 
 module.exports = router;
