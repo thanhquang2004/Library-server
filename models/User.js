@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const AuditLog = require("./AuditLog"); // Giả sử có model AuditLog
+const AuditLog = require("./AuditLog");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -26,7 +26,7 @@ const UserSchema = new mongoose.Schema(
     preferences: [{ type: String }],
     language: { type: String, default: "vi" },
     lastLogin: { type: Date },
-    isDeleted: { type: Boolean, default: false }, // Hỗ trợ xóa mềm
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
