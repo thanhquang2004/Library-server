@@ -1,4 +1,4 @@
-const Fine = require('../models/Fines');
+const Fine = require('../models/Fine');
 
 exports.createFine = async ({ memberId, bookLendingId, amount, reason }) => {
   if (!memberId || !bookLendingId || !amount) {
