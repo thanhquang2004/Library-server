@@ -1,32 +1,43 @@
 const express = require("express");
 const router = express.Router();
-const lendingController = require("../controllers/lendingController");
+const fineController = require("../controllers/finesController");
 const authenticate = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
-router.get(
-  "/",
-  authenticate,
-  roleMiddleware(["librarian", "admin"]),
-  lendingController.getLendings
-);
-router.get(
-  "/:id",
-  authenticate,
-  roleMiddleware(["librarian", "admin"]),
-  lendingController.getLendingById
-);
 router.post(
   "/",
   authenticate,
   roleMiddleware(["librarian", "admin"]),
-  lendingController.createLending
+  fineController.createFine
 );
+
 router.put(
-  "/:id/return",
+  "/:id/paid",
   authenticate,
   roleMiddleware(["librarian", "admin"]),
-  lendingController.returnLending
+  fineController.markAsPaid
+);
+
+router.get("/user/:memberId", authenticate, fineController.getFinesByUser);
+
+router.get(
+  "/user/:memberId/unpaid-total",
+  authenticate,
+  fineController.getUnpaidTotal
+);
+
+router.get(
+  "/search",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  fineController.getFines
+);
+
+router.delete(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  fineController.deleteFine
 );
 
 module.exports = router;

@@ -1,4 +1,5 @@
 const { User, Book, BookLending, Notification } = require("../models");
+const { hashPassword } = require("../utils/hash");
 const createError = require("http-errors");
 const jwt = require("jsonwebtoken");
 
@@ -27,10 +28,12 @@ async function register({
     throw createError(409, "Email already exists");
   }
 
+  const hashedPassword = await hashPassword(password);
+
   const user = await User.create({
     name,
     email,
-    password,
+    password: hashedPassword,
     role: (role || "member").toLowerCase(),
     address,
     phone,

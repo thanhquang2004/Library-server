@@ -1,30 +1,34 @@
 const express = require("express");
 const router = express.Router();
-const bookController = require("../controllers/bookController");
+const authorController = require("../controllers/authorController");
 const authenticate = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
-router.get("/", bookController.getBooks);
-router.get("/:id", bookController.getBookById);
-
-// Các route thêm/sửa/xoá yêu cầu Librarian
 router.post(
   "/",
   authenticate,
   roleMiddleware(["librarian", "admin"]),
-  bookController.createBook
+  authorController.createAuthor
 );
+
 router.put(
   "/:id",
   authenticate,
   roleMiddleware(["librarian", "admin"]),
-  bookController.updateBook
+  authorController.updateAuthor
 );
+
+router.get("/search", authenticate, authorController.searchAuthors);
+
+router.get("/:id", authenticate, authorController.getAuthor);
+
+router.get("/:id/books", authenticate, authorController.getBooksByAuthor);
+
 router.delete(
   "/:id",
   authenticate,
   roleMiddleware(["librarian", "admin"]),
-  bookController.deleteBook
+  authorController.deleteAuthor
 );
 
 module.exports = router;

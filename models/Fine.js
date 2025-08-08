@@ -6,7 +6,7 @@ const FineSchema = new mongoose.Schema({
   amount: Number,
   created: { type: Date, default: Date.now },
   reason: String,
-  status: { type: String, enum: ["unpaid", "paid"], default: "unpaid" },
+  status: { type: String, enum: ['unpaid', 'paid'], default: 'unpaid' },
   isDeleted: { type: Boolean, default: false },
 });
 

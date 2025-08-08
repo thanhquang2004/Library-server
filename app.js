@@ -12,6 +12,8 @@ const bookRoutes = require("./routes/bookRoutes");
 const lendingRoutes = require("./routes/lendingRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const authorRouter = require("./routes/authorRoutes")
+const fineRouter = require("./routes/finesRoutes")
 
 app.use(cors());
 app.use(
@@ -39,5 +41,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/lendings", lendingRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/author", authorRouter);
+app.use("/api/fines", fineRouter);
 
 module.exports = app;
