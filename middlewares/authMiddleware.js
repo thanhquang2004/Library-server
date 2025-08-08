@@ -1,34 +1,40 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const createError = require("http-errors");
+const { User } = require("../models");
 
-// Secret dùng để ký JWT (bạn đặt trong .env)
-const JWT_SECRET = process.env.JWT_SECRET || "secret_key_example";
-
-// Xác thực người dùng
-exports.auth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const token = authHeader.split(" ")[1];
+async function authenticate(req, res, next) {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(401).json({ message: "Invalid token" });
+    // Check for Authorization header
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw createError(401, "No token provided");
+    }
 
-    req.user = user; // gắn user vào request
+    // Extract token
+    const token = authHeader.split(" ")[1];
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.userId || !decoded.role) {
+      throw createError(401, "Invalid token");
+    }
+
+    // Find user by ID and ensure they are not deleted
+    const user = await User.findOne({ _id: decoded.userId, isDeleted: false });
+    if (!user) {
+      throw createError(401, "User not found or deactivated");
+    }
+
+    // Attach user info to request
+    req.user = {
+      userId: user._id.toString(),
+      role: user.role,
+    };
+
     next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid or expired token" });
+  } catch (error) {
+    next(error);
   }
-};
+}
 
-// Kiểm tra quyền Librarian hoặc Admin
-exports.isLibrarianOrAdmin = (req, res, next) => {
-  if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-  if (req.user.role === "librarian" || req.user.role === "admin") {
-    return next();
-  }
-  return res.status(403).json({ message: "Forbidden: Librarian/Admin only" });
-};
+module.exports = authenticate;

@@ -1,18 +1,34 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authorController = require('../controllers/authorController');
-const { auth, isLibrarianOrAdmin  } = require('../middlewares/authMiddleware');
+const authorController = require("../controllers/authorController");
+const authenticate = require("../middlewares/authMiddleware");
+const roleMiddleware = require("../middlewares/roleMiddleware");
 
-router.post('/', auth, isLibrarianOrAdmin, authorController.createAuthor);
+router.post(
+  "/",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  authorController.createAuthor
+);
 
-router.put('/:id', auth, isLibrarianOrAdmin, authorController.updateAuthor);
+router.put(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  authorController.updateAuthor
+);
 
-router.get('/search', auth, authorController.searchAuthors);
+router.get("/search", authenticate, authorController.searchAuthors);
 
-router.get('/:id', auth, authorController.getAuthor);
+router.get("/:id", authenticate, authorController.getAuthor);
 
-router.get('/:id/books', auth, authorController.getBooksByAuthor);
+router.get("/:id/books", authenticate, authorController.getBooksByAuthor);
 
-router.delete('/:id', auth, isLibrarianOrAdmin, authorController.deleteAuthor);
+router.delete(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  authorController.deleteAuthor
+);
 
 module.exports = router;
