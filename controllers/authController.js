@@ -1,97 +1,30 @@
-// controllers/authController.js
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const { register, login } = require("../services/userService");
+const { validateRegister, validateLogin } = require("../utils/validate");
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret_key_example";
-
-// [POST] /api/auth/register
-exports.register = async (req, res) => {
+exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, address, phone } = req.body;
-
-    // Kiểm tra email tồn tại chưa
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email đã tồn tại" });
+    const { error } = validateRegister(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
     }
 
-    // Hash mật khẩu
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      address,
-      phone,
-      dateOfMembership: new Date(),
-      role: "member", // mặc định là member
-      accountStatus: "active",
-    });
-
-    await newUser.save();
-
-    // Tạo token
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    res.status(201).json({
-      message: "Đăng ký thành công",
-      token,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Lỗi server" });
+    const user = await register({ ...req.body, requestingUser: req.user });
+    res.status(201).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
   }
 };
 
-// [POST] /api/auth/login
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { error } = validateLogin(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
 
-    // Tìm user theo email
-    const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(400)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
-
-    // So sánh mật khẩu
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res
-        .status(400)
-        .json({ message: "Email hoặc mật khẩu không đúng" });
-
-    // Sinh token
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.json({
-      message: "Đăng nhập thành công",
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Lỗi server" });
+    const result = await login(req.body);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
   }
 };
