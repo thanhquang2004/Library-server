@@ -7,7 +7,7 @@ const roleMiddleware = require("../middlewares/roleMiddleware");
 router.post(
   "/register",
   authenticate,
-  roleMiddleware(["admin"]),
+  roleMiddleware(["librarian", "admin"]),
   authController.register
 );
 router.post("/login", authController.login);

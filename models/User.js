@@ -26,6 +26,8 @@ const UserSchema = new mongoose.Schema(
     preferences: [{ type: String }],
     language: { type: String, default: "vi" },
     lastLogin: { type: Date },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
