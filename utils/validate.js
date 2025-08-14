@@ -44,7 +44,6 @@ const createRackSchema = Joi.object({
   code: Joi.string()
     .pattern(/^[A-Z0-9]{2,10}$/)
     .required(),
-  libraryId: Joi.string().hex().length(24).required(),
   location: Joi.string().max(100).required(),
   capacity: Joi.number().integer().min(1).required(),
 });
@@ -53,19 +52,8 @@ const updateRackSchema = Joi.object({
   code: Joi.string()
     .pattern(/^[A-Z0-9]{2,10}$/)
     .optional(),
-  libraryId: Joi.string().hex().length(24).optional(),
   location: Joi.string().max(100).optional(),
   capacity: Joi.number().integer().min(1).optional(),
-}).min(1);
-
-const createLibrarySchema = Joi.object({
-  name: Joi.string().min(2).max(100).required(),
-  address: Joi.string().max(200).required(),
-});
-
-const updateLibrarySchema = Joi.object({
-  name: Joi.string().min(2).max(100).optional(),
-  address: Joi.string().max(200).optional(),
 }).min(1);
 
 const createBookItemSchema = Joi.object({
@@ -118,12 +106,6 @@ const validateCreateRack = (data) =>
 const validateUpdateRack = (data) =>
   updateRackSchema.validate(data, { abortEarly: false });
 
-const validateCreateLibrary = (data) =>
-  createLibrarySchema.validate(data, { abortEarly: false });
-
-const validateUpdateLibrary = (data) =>
-  updateLibrarySchema.validate(data, { abortEarly: false });
-
 const validateCreateBookItem = (data) =>
   createBookItemSchema.validate(data, { abortEarly: false });
 
@@ -142,8 +124,6 @@ module.exports = {
   validateToggleCardStatus,
   validateCreateRack,
   validateUpdateRack,
-  validateCreateLibrary,
-  validateUpdateLibrary,
   validateCreateBookItem,
   validateUpdateBookItem,
   validateUpdateBookItemStatus,

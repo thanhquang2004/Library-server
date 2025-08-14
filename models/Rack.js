@@ -8,11 +8,6 @@ const RackSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    library: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Library",
-      required: true,
-    },
     location: {
       type: String,
     },

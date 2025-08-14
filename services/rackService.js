@@ -1,20 +1,8 @@
-const { Rack, Library, BookItem, Notification, User } = require("../models");
+const { Rack, BookItem, Notification, User } = require("../models");
 const createError = require("http-errors");
 
 // Create a new rack
-async function createRack({
-  code,
-  libraryId,
-  location,
-  capacity,
-  requestingUser,
-}) {
-  // Check if library exists
-  const library = await Library.findOne({ _id: libraryId, isDeleted: false });
-  if (!library) {
-    throw createError(404, "Library not found");
-  }
-
+async function createRack({ code, location, capacity, requestingUser }) {
   // Check if rack code exists
   const existingRack = await Rack.findOne({ code, isDeleted: false });
   if (existingRack) {
@@ -24,7 +12,6 @@ async function createRack({
   // Create rack
   const rack = await Rack.create({
     code,
-    library: libraryId,
     location,
     capacity,
   });
@@ -43,7 +30,7 @@ async function createRack({
   for (const user of adminsAndLibrarians) {
     await Notification.create({
       member: user._id,
-      content: `A new rack "${code}" has been added to library "${library.name}".`,
+      content: `A new rack "${code}" has been added".`,
       type: "email",
     });
   }
@@ -51,7 +38,6 @@ async function createRack({
   return {
     rackId: rack._id,
     code,
-    libraryId,
     location,
     capacity,
   };
@@ -59,17 +45,6 @@ async function createRack({
 
 // Update a rack
 async function updateRack(rackId, updates, requestingUser) {
-  // Check if library exists (if updated)
-  if (updates.libraryId) {
-    const library = await Library.findOne({
-      _id: updates.libraryId,
-      isDeleted: false,
-    });
-    if (!library) {
-      throw createError(404, "Library not found");
-    }
-  }
-
   // Update rack
   const rack = await Rack.findOneAndUpdate(
     { _id: rackId, isDeleted: false },
@@ -81,7 +56,6 @@ async function updateRack(rackId, updates, requestingUser) {
   }
 
   // Log action and notify admins/librarians
-  const library = await Library.findById(rack.library);
   await Rack.logAction(
     requestingUser.userId,
     "update_rack",
@@ -95,7 +69,7 @@ async function updateRack(rackId, updates, requestingUser) {
   for (const user of adminsAndLibrarians) {
     await Notification.create({
       member: user._id,
-      content: `Rack "${rack.code}" in library "${library.name}" has been updated.`,
+      content: `Rack "${rack.code}" in library has been updated.`,
       type: "email",
     });
   }
@@ -103,7 +77,6 @@ async function updateRack(rackId, updates, requestingUser) {
   return {
     rackId: rack._id,
     code: rack.code,
-    libraryId: rack.library,
     location: rack.location,
     capacity: rack.capacity,
   };
@@ -111,10 +84,7 @@ async function updateRack(rackId, updates, requestingUser) {
 
 // Get rack by ID
 async function getRackById(rackId) {
-  const rack = await Rack.findOne({ _id: rackId, isDeleted: false }).populate(
-    "library",
-    "name address"
-  );
+  const rack = await Rack.findOne({ _id: rackId, isDeleted: false });
   if (!rack) {
     throw createError(404, "Rack not found");
   }
@@ -122,12 +92,9 @@ async function getRackById(rackId) {
 }
 
 // Get all racks with pagination and filters
-async function getAllRacks({ libraryId, page = 1, limit = 10 }) {
+async function getAllRacks({ page = 1, limit = 10 }) {
   const query = { isDeleted: false };
-  if (libraryId) query.library = libraryId;
-
   const racks = await Rack.find(query)
-    .populate("library", "name address")
     .sort({ code: 1 })
     .skip((page - 1) * limit)
     .limit(parseInt(limit));
@@ -153,26 +120,6 @@ async function getBooksOnRack(rackId) {
   return { rackId, bookItems };
 }
 
-// Get racks by library
-async function getRacksByLibrary(libraryId, { page = 1, limit = 10 }) {
-  const library = await Library.findOne({ _id: libraryId, isDeleted: false });
-  if (!library) {
-    throw createError(404, "Library not found");
-  }
-
-  const racks = await Rack.find({ library: libraryId, isDeleted: false })
-    .populate("library", "name address")
-    .sort({ code: 1 })
-    .skip((page - 1) * limit)
-    .limit(parseInt(limit));
-
-  const total = await Rack.countDocuments({
-    library: libraryId,
-    isDeleted: false,
-  });
-  return { racks, total, page: parseInt(page), limit: parseInt(limit) };
-}
-
 // Soft delete a rack
 async function deleteRack(rackId, requestingUser) {
   const rack = await Rack.findOneAndUpdate(
@@ -191,7 +138,6 @@ async function deleteRack(rackId, requestingUser) {
   );
 
   // Log action and notify admins/librarians
-  const library = await Library.findById(rack.library);
   await Rack.logAction(
     requestingUser.userId,
     "delete_rack",
@@ -205,7 +151,7 @@ async function deleteRack(rackId, requestingUser) {
   for (const user of adminsAndLibrarians) {
     await Notification.create({
       member: user._id,
-      content: `Rack "${rack.code}" in library "${library.name}" has been removed.`,
+      content: `Rack "${rack.code}" in library has been removed.`,
       type: "email",
     });
   }
@@ -219,6 +165,5 @@ module.exports = {
   getRackById,
   getAllRacks,
   getBooksOnRack,
-  getRacksByLibrary,
   deleteRack,
 };

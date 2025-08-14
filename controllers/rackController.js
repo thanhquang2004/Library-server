@@ -4,7 +4,6 @@ const {
   getRackById,
   getAllRacks,
   getBooksOnRack,
-  getRacksByLibrary,
   deleteRack,
 } = require("../services/rackService");
 const { validateCreateRack, validateUpdateRack } = require("../utils/validate");
@@ -58,15 +57,6 @@ exports.getAllRacks = async (req, res, next) => {
 exports.getBooksOnRack = async (req, res, next) => {
   try {
     const result = await getBooksOnRack(req.params.id);
-    res.status(200).json({ success: true, data: result });
-  } catch (error) {
-    next(error);
-  }
-};
-
-exports.getRacksByLibrary = async (req, res, next) => {
-  try {
-    const result = await getRacksByLibrary(req.params.libraryId, req.query);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

@@ -5,7 +5,6 @@ const BookLending = require("./BookLending");
 const BookReservation = require("./BookReservation");
 const Fine = require("./Fine");
 const Payment = require("./Payment");
-const Library = require("./Library");
 const LibraryCard = require("./LibraryCard");
 const Rack = require("./Rack");
 const Notification = require("./Notification");
@@ -20,7 +19,6 @@ module.exports = {
   BookReservation,
   Fine,
   Payment,
-  Library,
   LibraryCard,
   Rack,
   Notification,
