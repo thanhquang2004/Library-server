@@ -18,6 +18,13 @@ router.put(
   userController.updateUser
 );
 
+router.post(
+  "/change-password",
+  authenticate,
+  roleMiddleware(["member", "librarian", "admin"]),
+  userController.changePassword
+);
+
 router.get(
   "/",
   authenticate,

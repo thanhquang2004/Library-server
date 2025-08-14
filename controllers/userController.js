@@ -5,9 +5,13 @@ const {
   getBorrowHistory,
   getRecommendedBooks,
   toggleAccountStatus,
+  changePassword,
   deleteUser,
 } = require("../services/userService");
-const { validateUpdateUser } = require("../utils/validate");
+const {
+  validateUpdateUser,
+  validateChangePasswordUser,
+} = require("../utils/validate");
 
 exports.getUser = async (req, res, next) => {
   try {
@@ -62,6 +66,23 @@ exports.getRecommendedBooks = async (req, res, next) => {
 exports.toggleAccountStatus = async (req, res, next) => {
   try {
     const result = await toggleAccountStatus(req.params.id, req.user);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { error } = validateChangePasswordUser(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const { userId } = req.user;
+    const { currentPassword, newPassword } = req.body;
+
+    const result = await changePassword(userId, currentPassword, newPassword);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
