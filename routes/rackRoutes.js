@@ -44,14 +44,6 @@ router.get(
   rackController.getBooksOnRack
 );
 
-// Get racks by library (admin/librarian only)
-router.get(
-  "/library/:libraryId",
-  authMiddleware,
-  roleMiddleware(["admin", "librarian"]),
-  rackController.getRacksByLibrary
-);
-
 // Delete rack (admin only)
 router.delete(
   "/:id",
