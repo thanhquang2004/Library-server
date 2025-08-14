@@ -13,7 +13,7 @@ const RackSchema = new mongoose.Schema(
       ref: "Library",
       required: true,
     },
-    locationIdentifier: {
+    location: {
       type: String,
     },
     capacity: {

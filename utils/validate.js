@@ -97,31 +97,41 @@ const changePasswordSchema = Joi.object({
 
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
+
 const validateLogin = (data) =>
   loginSchema.validate(data, { abortEarly: false });
+
 const validateUpdateUser = (data) =>
   updateUserSchema.validate(data, { abortEarly: false });
+
 const validateChangePasswordUser = (data) =>
   changePasswordSchema.validate(data, { abortEarly: false });
+
 const validateCreateLibraryCard = (data) =>
   createLibraryCardSchema.validate(data, { abortEarly: false });
+
 const validateToggleCardStatus = (data) =>
   toggleCardStatusSchema.validate(data, { abortEarly: false });
+
 const validateCreateRack = (data) =>
   createRackSchema.validate(data, { abortEarly: false });
 const validateUpdateRack = (data) =>
   updateRackSchema.validate(data, { abortEarly: false });
+
 const validateCreateLibrary = (data) =>
   createLibrarySchema.validate(data, { abortEarly: false });
+
 const validateUpdateLibrary = (data) =>
   updateLibrarySchema.validate(data, { abortEarly: false });
+
 const validateCreateBookItem = (data) =>
   createBookItemSchema.validate(data, { abortEarly: false });
+
 const validateUpdateBookItem = (data) =>
   updateBookItemSchema.validate(data, { abortEarly: false });
+
 const validateUpdateBookItemStatus = (data) =>
   updateBookItemStatusSchema.validate(data, { abortEarly: false });
-
 
 module.exports = {
   validateRegister,
