@@ -209,6 +209,26 @@ async function toggleAccountStatus(userId, requestingUser) {
   return { userId: user._id, accountStatus: user.accountStatus };
 }
 
+async function changePassword(userId, currentPassword, newPassword) {
+  const user = await User.findOne({ _id: userId, isDeleted: false }).select(
+    "+password"
+  );
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    throw createError(400, "Current password is incorrect");
+  }
+
+  user.password = await hashPassword(newPassword);
+  user.updatedAt = Date.now();
+
+  await user.save();
+  return { message: "Password changed successfully" };
+}
+
 // Soft delete user
 async function deleteUser(userId, requestingUser) {
   const user = await User.findOneAndUpdate(
@@ -244,5 +264,6 @@ module.exports = {
   getBorrowHistory,
   getRecommendedBooks,
   toggleAccountStatus,
+  changePassword,
   deleteUser,
 };
