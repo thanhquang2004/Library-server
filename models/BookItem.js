@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const AuditLog = require("./AuditLog");
 
 const BookItemSchema = new mongoose.Schema(
   {
@@ -40,5 +41,20 @@ const BookItemSchema = new mongoose.Schema(
 );
 
 BookItemSchema.index({ book: 1, status: 1 });
+
+BookItemSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 module.exports = mongoose.model("BookItem", BookItemSchema);
