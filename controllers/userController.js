@@ -7,10 +7,14 @@ const {
   toggleAccountStatus,
   changePassword,
   deleteUser,
+  resetPassword,
+  requestPasswordReset,
 } = require("../services/userService");
 const {
   validateUpdateUser,
   validateChangePasswordUser,
+  validateForgotPassword,
+  validateResetPassword,
 } = require("../utils/validate");
 
 exports.getUser = async (req, res, next) => {
@@ -92,6 +96,34 @@ exports.changePassword = async (req, res, next) => {
 exports.deleteUser = async (req, res, next) => {
   try {
     const result = await deleteUser(req.params.id, req.user);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { error } = validateForgotPassword(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const result = await requestPasswordReset(req.body.email);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { error } = validateResetPassword(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    const result = await resetPassword(req.body.code, req.body.newPassword);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

@@ -1,7 +1,9 @@
 const { User, Book, BookLending, Notification } = require("../models");
+const ResetToken = require("../models/ResetToken");
 const { hashPassword } = require("../utils/hash");
 const createError = require("http-errors");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../utils/email");
 
 // Register a new user
 async function register({
@@ -255,6 +257,92 @@ async function deleteUser(userId, requestingUser) {
   return { message: "User deleted" };
 }
 
+// Request password reset with 6-char code
+async function requestPasswordReset(email) {
+  const user = await User.findOne({ email, isDeleted: false });
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  // Generate random 6-char code
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // VD: "A1B2C3"
+
+  // Store code in ResetToken collection
+  await ResetToken.create({
+    user: user._id,
+    token: code,
+    expiresAt: new Date(Date.now() + 3600000), // 1 hour
+  });
+
+  // Send email with code
+  await sendEmail({
+    to: user.email,
+    subject: "Password Reset Code",
+    text: `Your password reset code is: ${code}\nThis code will expire in 1 hour.`,
+  });
+
+  // Log user action
+  await User.logAction(
+    user._id,
+    "request_password_reset",
+    { id: user._id, model: "User" },
+    "Password reset code requested"
+  );
+
+  // Create notification
+  await Notification.create({
+    member: user._id,
+    content: "A password reset code has been sent to your email.",
+    type: "email",
+  });
+
+  return { message: "Password reset code sent to email" };
+}
+
+// Reset password using 6-char OTP code
+async function resetPassword(code, newPassword) {
+  // Tìm trong ResetToken collection
+  const resetToken = await ResetToken.findOne({
+    token: code, // so khớp mã OTP
+    expiresAt: { $gt: new Date() }, // chưa hết hạn
+  });
+
+  if (!resetToken) {
+    throw createError(400, "Invalid or expired reset code");
+  }
+
+  // Tìm user tương ứng
+  const user = await User.findOne({ _id: resetToken.user, isDeleted: false });
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  // Hash & update password
+  user.password = await hashPassword(newPassword);
+  await user.save();
+
+  // Xoá mã OTP đã dùng
+  await ResetToken.deleteOne({ _id: resetToken._id });
+
+  // Log action
+  await User.logAction(
+    user._id,
+    "reset_password",
+    { id: user._id, model: "User" },
+    "Password reset"
+  );
+
+  // Thông báo cho user
+  await Notification.create({
+    member: user._id,
+    content: "Your password has been successfully reset.",
+    type: "email",
+  });
+
+  return { message: "Password reset successful" };
+}
+
 module.exports = {
   register,
   login,
@@ -266,4 +354,6 @@ module.exports = {
   toggleAccountStatus,
   changePassword,
   deleteUser,
+  requestPasswordReset,
+  resetPassword,
 };
