@@ -123,7 +123,7 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    const result = await resetPassword(req.body.code, req.body.newPassword);
+    const result = await resetPassword(req.body.token, req.body.newPassword);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

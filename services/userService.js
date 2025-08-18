@@ -257,29 +257,31 @@ async function deleteUser(userId, requestingUser) {
   return { message: "User deleted" };
 }
 
-// Request password reset with 6-char code
+// Request password reset with 6-char token
 async function requestPasswordReset(email) {
+  if (typeof email !== "string") {
+    throw createError(400, "Invalid email address");
+  }
   const user = await User.findOne({ email, isDeleted: false });
   if (!user) {
     throw createError(404, "User not found");
   }
 
-  // Generate random 6-char code
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-  // VD: "A1B2C3"
+  // Generate random 6-char token
+  const token = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-  // Store code in ResetToken collection
+  // Store token in ResetToken collection
   await ResetToken.create({
     user: user._id,
-    token: code,
-    expiresAt: new Date(Date.now() + 3600000), // 1 hour
+    token: token,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 phút
   });
 
-  // Send email with code
+  // Send email with token
   await sendEmail({
     to: user.email,
-    subject: "Password Reset Code",
-    text: `Your password reset code is: ${code}\nThis code will expire in 1 hour.`,
+    subject: "Password Reset Request",
+    text: `Your password reset token is: ${token}\nThis token will expire in 5 minutes.`,
   });
 
   // Log user action
@@ -287,29 +289,28 @@ async function requestPasswordReset(email) {
     user._id,
     "request_password_reset",
     { id: user._id, model: "User" },
-    "Password reset code requested"
+    "Password reset token requested"
   );
 
   // Create notification
   await Notification.create({
     member: user._id,
-    content: "A password reset code has been sent to your email.",
+    content: "A password reset token has been sent to your email.",
     type: "email",
   });
 
-  return { message: "Password reset code sent to email" };
+  return { message: "Password reset token sent to email" };
 }
 
-// Reset password using 6-char OTP code
-async function resetPassword(code, newPassword) {
-  // Tìm trong ResetToken collection
+// Reset password using 6-char OTP token
+async function resetPassword(token, newPassword) {
   const resetToken = await ResetToken.findOne({
-    token: code, // so khớp mã OTP
+    token: { $eq: token }, // so sánh mã
     expiresAt: { $gt: new Date() }, // chưa hết hạn
   });
 
   if (!resetToken) {
-    throw createError(400, "Invalid or expired reset code");
+    throw createError(400, "Invalid or expired reset token");
   }
 
   // Tìm user tương ứng
