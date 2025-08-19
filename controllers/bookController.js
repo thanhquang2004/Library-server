@@ -1,7 +1,15 @@
 const bookService = require("../services/bookService");
 
+const {
+  validateCreateBook,
+  validateUpdateBook
+} = require("../utils/validate");
+
 exports.createBook = async (req, res) => {
   try {
+    const { error } = validateCreateBook(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const book = await bookService.createBook(req.body);
     res.status(201).json(book);
   } catch (err) {
@@ -11,6 +19,9 @@ exports.createBook = async (req, res) => {
 
 exports.updateBook = async (req, res) => {
   try {
+    const { error } = validateUpdateBook(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const book = await bookService.updateBook(req.params.id, req.body);
     res.json(book);
   } catch (err) {

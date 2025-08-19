@@ -1,7 +1,14 @@
 const fineService = require('../services/fineService');
 
+const {
+  validateCreateFine,
+} = require("../utils/validate");
+
 exports.createFine = async (req, res) => {
   try {
+    const { error } = validateCreateFine(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const fine = await fineService.createFine(req.body);
 
     res.status(201).json({
