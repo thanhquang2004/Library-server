@@ -3,10 +3,7 @@ const Joi = require("joi");
 const registerSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   email: Joi.string().email().required(),
-  password: Joi.string()
-    .min(8)
-    .required()
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/),
+  password: Joi.string().min(1).required(),
   role: Joi.string().valid("member", "librarian", "admin").default("member"),
   address: Joi.string().max(200).optional(),
   phone: Joi.string()
@@ -83,6 +80,19 @@ const changePasswordSchema = Joi.object({
     .required(),
 });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string()
+    .min(8)
+    .max(50)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+    .required(),
+});
+
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
 
@@ -115,6 +125,11 @@ const validateUpdateBookItem = (data) =>
 const validateUpdateBookItemStatus = (data) =>
   updateBookItemStatusSchema.validate(data, { abortEarly: false });
 
+const validateForgotPassword = (data) =>
+  forgotPasswordSchema.validate(data, { abortEarly: false });
+const validateResetPassword = (data) =>
+  resetPasswordSchema.validate(data, { abortEarly: false });
+
 module.exports = {
   validateRegister,
   validateLogin,
@@ -127,4 +142,6 @@ module.exports = {
   validateCreateBookItem,
   validateUpdateBookItem,
   validateUpdateBookItemStatus,
+  validateForgotPassword,
+  validateResetPassword,
 };
