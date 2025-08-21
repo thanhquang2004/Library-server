@@ -1,7 +1,14 @@
 const libraryCardService = require("../services/libraryCardService");
 
+const {
+  validateCreateLibraryCard,
+} = require("../utils/validate");
+
 exports.createCard = async (req, res) => {
   try {
+    const { error } = validateCreateLibraryCard(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const card = await libraryCardService.createCard(req.body);
     res.status(201).json(card);
   } catch (err) {

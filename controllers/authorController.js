@@ -1,7 +1,15 @@
 const authorService = require('../services/authorService');
 
+const {
+  validateCreateAuthor,
+  validateUpdateAuthor,
+} = require("../utils/validate");
+
 exports.createAuthor = async (req, res) => {
   try {
+    const { error } = validateCreateAuthor(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const author = await authorService.createAuthor(req.body);
     res.status(201).json({
       name: author.name,
@@ -17,6 +25,9 @@ exports.createAuthor = async (req, res) => {
 
 exports.updateAuthor = async (req, res) => {
   try {
+    const { error } = validateUpdateAuthor(req.body);
+    if (error) throw new Error(error.details.map((d) => d.message).join(", "));
+
     const author = await authorService.updateAuthor(req.params.id, req.body);
     res.status(200).json({
       authorId: author.authorId,
