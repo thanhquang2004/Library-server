@@ -3,10 +3,7 @@ const Joi = require("joi");
 const registerSchema = Joi.object({
   name: Joi.string().min(2).max(50).required(),
   email: Joi.string().email().required(),
-  password: Joi.string()
-    .min(8)
-    .required()
-    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/),
+  password: Joi.string().min(1).required(),
   role: Joi.string().valid("member", "librarian", "admin").default("member"),
   address: Joi.string().max(200).optional(),
   phone: Joi.string()
@@ -83,6 +80,7 @@ const changePasswordSchema = Joi.object({
     .required(),
 });
 
+
 const createAuthorSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().max(500).optional(),
@@ -139,6 +137,20 @@ const validateCreateAuthor = (data) =>
 const validateUpdateAuthor = (data) =>
   updateAuthorSchema.validate(data, { abortEarly: false });
 
+
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required(),
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  newPassword: Joi.string()
+    .min(8)
+    .max(50)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+    .required(),
+});
+
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
 
@@ -171,6 +183,7 @@ const validateUpdateBookItem = (data) =>
 const validateUpdateBookItemStatus = (data) =>
   updateBookItemStatusSchema.validate(data, { abortEarly: false });
 
+
 const validateCreateFine = (data) =>
   createFineSchema.validate(data, { abortEarly: false });
 
@@ -179,6 +192,11 @@ const validateCreateBook = (data) =>
 
 const validateUpdateBook = (data) =>
   updateBookSchema.validate(data, { abortEarly: false });
+
+const validateForgotPassword = (data) =>
+  forgotPasswordSchema.validate(data, { abortEarly: false });
+const validateResetPassword = (data) =>
+  resetPasswordSchema.validate(data, { abortEarly: false });
 
 module.exports = {
   validateRegister,
@@ -197,4 +215,6 @@ module.exports = {
   validateCreateFine,
   validateCreateBook,
   validateUpdateBook,
+  validateForgotPassword,
+  validateResetPassword,
 };
