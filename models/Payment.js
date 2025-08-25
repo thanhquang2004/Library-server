@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const AuditLog = require("./AuditLog");
 
 const PaymentSchema = new mongoose.Schema({
   fine: { type: mongoose.Schema.Types.ObjectId, ref: "Fine", required: true },
@@ -8,5 +9,20 @@ const PaymentSchema = new mongoose.Schema({
   transactionId: String,
   isDeleted: { type: Boolean, default: false },
 });
+
+PaymentSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 module.exports = mongoose.model("Payment", PaymentSchema);

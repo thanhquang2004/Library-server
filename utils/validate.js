@@ -80,19 +80,18 @@ const changePasswordSchema = Joi.object({
     .required(),
 });
 
-
 const createAuthorSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().max(500).optional(),
   birthDate: Joi.date().optional(),
-  nationality: Joi.string().max(100).optional()
+  nationality: Joi.string().max(100).optional(),
 });
 
 const updateAuthorSchema = Joi.object({
   name: Joi.string().min(2).max(100).optional(),
   description: Joi.string().max(500).optional(),
   birthDate: Joi.date().optional(),
-  nationality: Joi.string().max(100).optional()
+  nationality: Joi.string().max(100).optional(),
 }).min(1);
 
 const createFineSchema = Joi.object({
@@ -111,7 +110,9 @@ const createBookSchema = Joi.object({
   publicationDate: Joi.date().required(),
   language: Joi.string().min(2).max(50).required(),
   numberOfPages: Joi.number().integer().min(1).required(),
-  format: Joi.string().valid("hardcover", "paperback", "ebook", "audiobook").required(),
+  format: Joi.string()
+    .valid("hardcover", "paperback", "ebook", "audiobook")
+    .required(),
   authors: Joi.array().items(Joi.string().hex().length(24)).required(), // ObjectId list
   digitalUrl: Joi.string().uri().optional(),
   coverImage: Joi.string().uri().optional(),
@@ -125,7 +126,9 @@ const updateBookSchema = Joi.object({
   publicationDate: Joi.date().optional(),
   language: Joi.string().min(2).max(50).optional(),
   numberOfPages: Joi.number().integer().min(1).optional(),
-  format: Joi.string().valid("hardcover", "paperback", "ebook", "audiobook").optional(),
+  format: Joi.string()
+    .valid("hardcover", "paperback", "ebook", "audiobook")
+    .optional(),
   authors: Joi.array().items(Joi.string().hex().length(24)).optional(),
   digitalUrl: Joi.string().uri().optional(),
   coverImage: Joi.string().uri().optional(),
@@ -136,7 +139,6 @@ const validateCreateAuthor = (data) =>
 
 const validateUpdateAuthor = (data) =>
   updateAuthorSchema.validate(data, { abortEarly: false });
-
 
 const forgotPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -149,6 +151,13 @@ const resetPasswordSchema = Joi.object({
     .max(50)
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .required(),
+});
+
+const createPaymentSchema = Joi.object({
+  fineId: Joi.string().hex().length(24).required(),
+  amount: Joi.number().min(0).required(),
+  method: Joi.string().valid("cash", "credit", "online").required(),
+  transactionId: Joi.string().max(100).optional().allow(null),
 });
 
 const validateRegister = (data) =>
@@ -183,7 +192,6 @@ const validateUpdateBookItem = (data) =>
 const validateUpdateBookItemStatus = (data) =>
   updateBookItemStatusSchema.validate(data, { abortEarly: false });
 
-
 const validateCreateFine = (data) =>
   createFineSchema.validate(data, { abortEarly: false });
 
@@ -195,8 +203,12 @@ const validateUpdateBook = (data) =>
 
 const validateForgotPassword = (data) =>
   forgotPasswordSchema.validate(data, { abortEarly: false });
+
 const validateResetPassword = (data) =>
   resetPasswordSchema.validate(data, { abortEarly: false });
+
+const validateCreatePayment = (data) =>
+  createPaymentSchema.validate(data, { abortEarly: false });
 
 module.exports = {
   validateRegister,
@@ -217,4 +229,5 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
+  validateCreatePayment,
 };
