@@ -1,15 +1,25 @@
+const mongoose = require("mongoose");
 const BookReservation = require("../models/BookReservation");
 const BookItem = require("../models/BookItem");
 
+function validateObjectId(id, name = "id") {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error(`Invalid ${name}`);
+    }
+}
+
 async function createReservation({ bookItemId, memberId }) {
-    const bookItem = await BookItem.findOne({ _id: { $eq: bookItemId } });
+    validateObjectId(bookItemId, "bookItemId");
+    validateObjectId(memberId, "memberId");
+
+    const bookItem = await BookItem.findById(bookItemId);
     if (!bookItem || bookItem.status !== "available") {
         return { error: "Book not reservable" };
     }
 
     const now = new Date();
-    const expirationDate = new Date();
-    expirationDate.setDate(now.getDate() + 1); // hết hạn sau 1 ngày
+    const expirationDate = new Date(now);
+    expirationDate.setDate(now.getDate() + 1);
 
     const reservation = await BookReservation.create({
         bookItem: bookItemId,
@@ -23,8 +33,8 @@ async function createReservation({ bookItemId, memberId }) {
 
     return {
         reservationId: reservation._id,
-        bookItemId: reservation.bookItemId,
-        member: reservation.member,
+        bookItemId: reservation.bookItem,
+        memberId: reservation.member._id,
         creationDate: reservation.creationDate,
         reservationDate: reservation.reservationDate,
         expirationDate: reservation.expirationDate,
@@ -33,23 +43,22 @@ async function createReservation({ bookItemId, memberId }) {
     };
 }
 
-// Hủy đặt trước
 async function cancelReservation(reservationId) {
-    const reservation = await BookReservation.findOne({ _id: reservationId });
+    validateObjectId(reservationId, "reservationId");
+
+    const reservation = await BookReservation.findById(reservationId);
     if (!reservation) return { error: "Reservation not found" };
 
     reservation.status = "cancelled";
     await reservation.save();
 
-    return {
-        reservationId: reservation._id,
-        status: reservation.status,
-    };
+    return { reservationId: reservation._id, status: reservation.status };
 }
 
-// Hoàn thành đặt trước
 async function completeReservation(reservationId) {
-    const reservation = await BookReservation.findOne({ _id: reservationId });
+    validateObjectId(reservationId, "reservationId");
+
+    const reservation = await BookReservation.findById(reservationId);
     if (!reservation) return { error: "Reservation not found" };
 
     reservation.status = "completed";
@@ -63,8 +72,9 @@ async function completeReservation(reservationId) {
     };
 }
 
-// Kiểm tra hết hạn
 async function checkExpiration(reservationId) {
+    validateObjectId(reservationId, "reservationId");
+
     const reservation = await BookReservation.findById(reservationId);
     if (!reservation) return { error: "Reservation not found" };
 
@@ -73,21 +83,19 @@ async function checkExpiration(reservationId) {
         await reservation.save();
     }
 
-    return {
-        reservationId: reservation._id,
-        status: reservation.status,
-    };
+    return { reservationId: reservation._id, status: reservation.status };
 }
 
-// Lấy danh sách đặt trước của chính member
 async function getUserReservations(memberId) {
+    validateObjectId(memberId, "memberId");
+
     const reservations = await BookReservation.find({ member: memberId, isDeleted: false })
         .populate("bookItem");
 
     return reservations.map(r => ({
         reservationId: r._id,
-        bookItem: r.bookItemId,
-        member: r.memberId,
+        bookItem: r.bookItem,
+        member: r.member,
         creationDate: r.creationDate,
         reservationDate: r.reservationDate,
         expirationDate: r.expirationDate,
@@ -95,28 +103,20 @@ async function getUserReservations(memberId) {
     }));
 }
 
-// Lấy tất cả đặt trước (admin, librarian)
 async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
+    const query = { isDeleted: false };
+
     if (memberId) {
-        if (mongoose.Types.ObjectId.isValid(memberId)) {
-            query.memberId = new mongoose.Types.ObjectId(memberId);
-        } else {
-            return { error: "Invalid memberId" };
-        }
+        validateObjectId(memberId, "memberId");
+        query.member = memberId;
     }
 
-    const query = { isDeleted: false };
-    if (
-        memberId &&
-        (typeof memberId === "string" ||
-            (memberId && typeof memberId === "object" && memberId.constructor && memberId.constructor.name === "ObjectId"))
-    ) {
-        query.memberId = memberId;
-    } else if (memberId && typeof memberId === "object") {
-        // Untrusted, potentially malicious object, reject or ignore
-        return { error: "Invalid memberId" };
+    if (status && ["pending", "completed", "cancelled", "expired"].includes(status)) {
+        query.status = status;
     }
-    if (status) query.status = status;
+
+    page = Math.max(1, parseInt(page, 10));
+    limit = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
     const reservations = await BookReservation.find(query)
         .skip((page - 1) * limit)
@@ -125,8 +125,8 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
 
     return reservations.map(r => ({
         reservationId: r._id,
-        bookItem: r.bookItemId,
-        member: r.memberId,
+        bookItem: r.bookItem,
+        member: r.member,
         creationDate: r.creationDate,
         reservationDate: r.reservationDate,
         expirationDate: r.expirationDate,
@@ -134,8 +134,9 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
     }));
 }
 
-// Xóa mềm (isDeleted = true)
 async function softDeleteReservation(reservationId) {
+    validateObjectId(reservationId, "reservationId");
+
     const reservation = await BookReservation.findById(reservationId);
     if (!reservation) return { error: "Reservation not found" };
 
@@ -153,4 +154,4 @@ module.exports = {
     getUserReservations,
     getAllReservations,
     softDeleteReservation,
-}
+};

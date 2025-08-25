@@ -3,24 +3,25 @@ const BookItem = require("../models/BookItem");
 const BookReservation = require("../models/BookReservation");
 const mongoose = require("mongoose");
 
-async function createLending({ bookItemId, memberId, dueDate }) {
-    if (!mongoose.Types.ObjectId.isValid(bookItemId)) {
-        throw new Error("Invalid book item ID");
+function validateObjectId(id, name = "id") {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error(`Invalid ${name}`);
     }
+}
 
-    // Ensure bookItemId is a string or valid ObjectId and not an object
-    if (typeof bookItemId !== "string" && !(bookItemId instanceof mongoose.Types.ObjectId)) {
-        throw new Error("Invalid bookItemId type");
-    }
-    if (!mongoose.Types.ObjectId.isValid(bookItemId)) {
-        throw new Error("Invalid bookItemId format");
-    }
+async function createLending({ bookItemId, memberId, dueDate }) {
+    validateObjectId(bookItemId, "bookItemId");
+    validateObjectId(memberId, "memberId");
+
     const bookItem = await BookItem.findById(bookItemId);
     if (!bookItem) throw new Error("Sách không tồn tại");
     if (bookItem.status !== "available") throw new Error("Sách đã được mượn");
 
-    const bookReservation = await BookReservation.findById(bookItemId);
-    if (bookReservation && bookReservation.status !== "completed") throw new Error("Sách đã được đặt trước");
+    const bookReservation = await BookReservation.findOne({
+        bookItem: bookItemId,
+        status: { $ne: "completed" }
+    });
+    if (bookReservation) throw new Error("Sách đã được đặt trước");
 
     const lending = await BookLending.create({
         bookItem: bookItemId,
@@ -33,7 +34,6 @@ async function createLending({ bookItemId, memberId, dueDate }) {
         isDeleted: false
     });
 
-    // cập nhật trạng thái sách
     bookItem.status = "loaned";
     await bookItem.save();
 
@@ -50,6 +50,8 @@ async function createLending({ bookItemId, memberId, dueDate }) {
 }
 
 async function returnBook(id) {
+    validateObjectId(id, "lendingId");
+
     const lending = await BookLending.findById(id).populate("bookItem");
     if (!lending || lending.isDeleted) return null;
 
@@ -57,7 +59,6 @@ async function returnBook(id) {
     lending.status = "returned";
     await lending.save();
 
-    // cập nhật status bookItem lại thành available
     if (lending.bookItem) {
         lending.bookItem.status = "available";
         await lending.bookItem.save();
@@ -71,45 +72,42 @@ async function returnBook(id) {
 }
 
 async function extendLending(id, newDueDate) {
+    validateObjectId(id, "lendingId");
+
     const lending = await BookLending.findById(id);
     if (!lending || lending.isDeleted) return null;
-
     if (lending.status !== "borrowed") throw new Error("Cannot extend");
 
     lending.dueDate = newDueDate;
     await lending.save();
 
-    return {
-        bookLendingId: lending._id,
-        dueDate: lending.dueDate,
-    };
+    return { bookLendingId: lending._id, dueDate: lending.dueDate };
 }
 
 async function checkOverdue(id) {
+    validateObjectId(id, "lendingId");
+
     const lending = await BookLending.findById(id);
     if (!lending || lending.isDeleted) return null;
 
     const overdue = new Date() > new Date(lending.dueDate) && lending.status === "borrowed";
-    return {
-        bookLendingId: lending._id,
-        "overdue": overdue
-    };
+    return { bookLendingId: lending._id, overdue };
 }
 
 async function getLendings({ memberId, status, page = 1, limit = 10 }) {
     const query = { isDeleted: false };
-    // Validate and safely add memberId to query
+
     if (memberId) {
-        // Only allow valid ObjectId or string values for memberId
-        if (typeof memberId === "string" && mongoose.Types.ObjectId.isValid(memberId)) {
-            query.member = { $eq: memberId };
-        } else if (memberId instanceof mongoose.Types.ObjectId) {
-            query.member = { $eq: memberId };
-        } else {
-            throw new Error("Invalid memberId format");
-        }
+        validateObjectId(memberId, "memberId");
+        query.member = memberId;
     }
-    if (status) query.status = status;
+
+    if (status && ["borrowed", "returned"].includes(status)) {
+        query.status = status;
+    }
+
+    page = Math.max(1, parseInt(page, 10));
+    limit = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
     const lendings = await BookLending.find(query)
         .populate("bookItem")
@@ -117,8 +115,7 @@ async function getLendings({ memberId, status, page = 1, limit = 10 }) {
         .limit(limit)
         .exec();
 
-    // map để trả kết quả chuẩn
-    return lendings.map((l) => ({
+    return lendings.map(l => ({
         bookLendingId: l._id,
         bookItem: l.bookItem,
         member: l.member,
@@ -131,7 +128,11 @@ async function getLendings({ memberId, status, page = 1, limit = 10 }) {
 }
 
 async function getLendingById(id) {
+    validateObjectId(id, "lendingId");
+
     const lending = await BookLending.findOne({ _id: id, isDeleted: false }).populate("bookItem");
+    if (!lending) return null;
+
     return {
         bookLendingId: lending._id,
         bookItem: lending.bookItem,
@@ -145,6 +146,8 @@ async function getLendingById(id) {
 }
 
 async function deleteLending(id) {
+    validateObjectId(id, "lendingId");
+
     const lending = await BookLending.findById(id);
     if (!lending) return null;
 
