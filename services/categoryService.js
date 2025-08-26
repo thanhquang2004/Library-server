@@ -71,8 +71,13 @@ async function updateCategory(categoryId, updates, requestingUser) {
   // Check for duplicate name
   if (updates.name) {
     if (safeUpdates.name) {
+      // Ensure the name is a string before querying to avoid NoSQL injection
+      if (typeof updates.name !== "string") {
+        throw createError(400, "Invalid category name");
+      }
       const existingCategory = await Category.findOne({
         name: updates.name,
+        name: { $eq: updates.name },
         isDeleted: false,
         _id: { $ne: categoryId },
       });
@@ -101,7 +106,6 @@ async function updateCategory(categoryId, updates, requestingUser) {
   const category = await Category.findOneAndUpdate(
     { _id: categoryId, isDeleted: false },
     { $set: updates },
-    { $set: safeUpdates },
     { new: true, runValidators: true }
   );
 
