@@ -105,7 +105,7 @@ async function updateCategory(categoryId, updates, requestingUser) {
   // Update category
   const category = await Category.findOneAndUpdate(
     { _id: categoryId, isDeleted: false },
-    { $set: updates },
+    { $set: safeUpdates },
     { new: true, runValidators: true }
   );
 
