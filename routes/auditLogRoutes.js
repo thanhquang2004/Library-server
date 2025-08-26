@@ -6,7 +6,7 @@ const roleMiddleware = require("../middlewares/roleMiddleware");
 const rateLimiter = require("../middlewares/rateLimiter");
 
 // Create audit log (system-only)
-router.post("/", auditLogController.createAuditLog);
+router.post("/", rateLimiter, auditLogController.createAuditLog);
 
 // Get audit logs by user ID (admin)
 router.get(
