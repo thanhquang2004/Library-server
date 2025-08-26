@@ -3,6 +3,7 @@ const router = express.Router();
 const auditLogController = require("../controllers/auditlogController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
+const rateLimiter = require("../middlewares/rateLimiter");
 
 // Create audit log (system-only)
 router.post("/", auditLogController.createAuditLog);
@@ -12,6 +13,7 @@ router.get(
   "/user/:userId",
   authMiddleware,
   roleMiddleware(["admin"]),
+  rateLimiter,
   auditLogController.getAuditLogsByUser
 );
 
@@ -20,6 +22,7 @@ router.get(
   "/model/:model",
   authMiddleware,
   roleMiddleware(["admin"]),
+  rateLimiter,
   auditLogController.getAuditLogsByModel
 );
 
@@ -28,6 +31,7 @@ router.get(
   "/",
   authMiddleware,
   roleMiddleware(["admin"]),
+  rateLimiter,
   auditLogController.getAllAuditLogs
 );
 
