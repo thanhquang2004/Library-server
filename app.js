@@ -20,6 +20,8 @@ const bookItemRoutes = require("./routes/bookItemRoutes");
 const bookLendingRoutes = require("./routes/bookLendingRoutes");
 const bookReservationRoutes = require("./routes/bookReservation");
 const notificationRoutes = require("./routes/notificationRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+
 
 app.use(cors());
 app.use(
@@ -52,8 +54,12 @@ app.use("/api/fines", fineRoutes);
 app.use("/api/library-cards", libraryCardRoutes);
 app.use("/api/racks", rackRoutes);
 app.use("/api/book-items", bookItemRoutes);
+
 app.use("/api/book-lendings", bookLendingRoutes);
 app.use("/api/book-reservations", bookReservationRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+app.use("/api/categories", categoryRoutes);
+
 
 module.exports = app;

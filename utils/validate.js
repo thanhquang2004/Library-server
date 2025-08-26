@@ -80,19 +80,18 @@ const changePasswordSchema = Joi.object({
     .required(),
 });
 
-
 const createAuthorSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().max(500).optional(),
   birthDate: Joi.date().optional(),
-  nationality: Joi.string().max(100).optional()
+  nationality: Joi.string().max(100).optional(),
 });
 
 const updateAuthorSchema = Joi.object({
   name: Joi.string().min(2).max(100).optional(),
   description: Joi.string().max(500).optional(),
   birthDate: Joi.date().optional(),
-  nationality: Joi.string().max(100).optional()
+  nationality: Joi.string().max(100).optional(),
 }).min(1);
 
 const createFineSchema = Joi.object({
@@ -111,7 +110,9 @@ const createBookSchema = Joi.object({
   publicationDate: Joi.date().required(),
   language: Joi.string().min(2).max(50).required(),
   numberOfPages: Joi.number().integer().min(1).required(),
-  format: Joi.string().valid("hardcover", "paperback", "ebook", "audiobook").required(),
+  format: Joi.string()
+    .valid("hardcover", "paperback", "ebook", "audiobook")
+    .required(),
   authors: Joi.array().items(Joi.string().hex().length(24)).required(), // ObjectId list
   digitalUrl: Joi.string().uri().optional(),
   coverImage: Joi.string().uri().optional(),
@@ -125,7 +126,9 @@ const updateBookSchema = Joi.object({
   publicationDate: Joi.date().optional(),
   language: Joi.string().min(2).max(50).optional(),
   numberOfPages: Joi.number().integer().min(1).optional(),
-  format: Joi.string().valid("hardcover", "paperback", "ebook", "audiobook").optional(),
+  format: Joi.string()
+    .valid("hardcover", "paperback", "ebook", "audiobook")
+    .optional(),
   authors: Joi.array().items(Joi.string().hex().length(24)).optional(),
   digitalUrl: Joi.string().uri().optional(),
   coverImage: Joi.string().uri().optional(),
@@ -136,6 +139,7 @@ const createLendingSchema = Joi.object({
   memberId: Joi.string().hex().length(24).required(),
   dueDate: Joi.date().iso().required()
 });
+
 
 const extendLendingSchema = Joi.object({
   newDueDate: Joi.date().iso().greater("now").required()
@@ -153,6 +157,7 @@ const resetPasswordSchema = Joi.object({
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .required(),
 });
+
 
 const createReservationSchema = Joi.object({
   bookItemId: Joi.string().hex().length(24).required(),
@@ -178,6 +183,19 @@ const validateCreateAuthor = (data) =>
 
 const validateUpdateAuthor = (data) =>
   updateAuthorSchema.validate(data, { abortEarly: false });
+
+const createCategorySchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  description: Joi.string().max(500).optional(),
+  parent: Joi.string().hex().length(24).optional().allow(null),
+});
+
+const updateCategorySchema = Joi.object({
+  name: Joi.string().min(2).max(100).optional(),
+  description: Joi.string().max(500).optional(),
+  parent: Joi.string().hex().length(24).optional().allow(null),
+}).min(1);
+
 
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
@@ -256,6 +274,13 @@ const validateNotificationId = (data) => {
   return error;
 };
 
+const validateCreateCategory = (data) =>
+  createCategorySchema.validate(data, { abortEarly: false });
+
+const validateUpdateCategory = (data) =>
+  updateCategorySchema.validate(data, { abortEarly: false });
+
+
 module.exports = {
   validateRegister,
   validateLogin,
@@ -281,4 +306,7 @@ module.exports = {
   validateReservationId,
   validateCreateNotification,
   validateNotificationId
+  validateCreateCategory,
+  validateUpdateCategory,
+
 };
