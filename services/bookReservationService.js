@@ -98,7 +98,16 @@ async function getUserReservations(memberId) {
 // Lấy tất cả đặt trước (admin, librarian)
 async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
     const query = { isDeleted: false };
-    if (memberId) query.memberId = memberId;
+    if (
+        memberId &&
+        (typeof memberId === "string" ||
+         (memberId && typeof memberId === "object" && memberId.constructor && memberId.constructor.name === "ObjectId"))
+    ) {
+        query.memberId = memberId;
+    } else if (memberId && typeof memberId === "object") {
+        // Untrusted, potentially malicious object, reject or ignore
+        return { error: "Invalid memberId" };
+    }
     if (status) query.status = status;
 
     const reservations = await BookReservation.find(query)
