@@ -141,6 +141,7 @@ const createLendingSchema = Joi.object({
 });
 
 
+
 const extendLendingSchema = Joi.object({
   newDueDate: Joi.date().iso().greater("now").required()
 });
@@ -156,6 +157,27 @@ const resetPasswordSchema = Joi.object({
     .max(50)
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
     .required(),
+});
+
+
+const createAuditLogSchema = Joi.object({
+  userId: Joi.string().hex().length(24).required(),
+  action: Joi.string().min(2).max(100).required(),
+  target: Joi.object({
+    id: Joi.string().hex().length(24).optional(),
+    model: Joi.string()
+      .valid(
+        "User",
+        "Library",
+        "BookItem",
+        "Payment",
+        "Fine",
+        "LibraryCard",
+        "Rack"
+      )
+      .optional(),
+  }).optional(),
+  details: Joi.string().max(500).optional(),
 });
 
 
@@ -195,7 +217,6 @@ const updateCategorySchema = Joi.object({
   description: Joi.string().max(500).optional(),
   parent: Joi.string().hex().length(24).optional().allow(null),
 }).min(1);
-
 
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
@@ -243,6 +264,10 @@ const validateForgotPassword = (data) =>
 
 const validateResetPassword = (data) =>
   resetPasswordSchema.validate(data, { abortEarly: false });
+
+
+const validateCreateAuditLog = (data) =>
+  createAuditLogSchema.validate(data, { abortEarly: false });
 
 const validateCreateLending = (data) => {
   const { error } = createLendingSchema.validate(data, { abortEarly: false });
@@ -300,6 +325,8 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
+
+  validateCreateAuditLog,
   validateCreateLending,
   validateExtendLending,
   validateCreateReservation,

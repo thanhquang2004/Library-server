@@ -17,6 +17,7 @@ const fineRoutes = require("./routes/finesRoutes");
 const libraryCardRoutes = require("./routes/libraryCardRoutes");
 const rackRoutes = require("./routes/rackRoutes");
 const bookItemRoutes = require("./routes/bookItemRoutes");
+const auditLogRoutes = require("./routes/auditlogRoutes");
 const bookLendingRoutes = require("./routes/bookLendingRoutes");
 const bookReservationRoutes = require("./routes/bookReservation");
 const notificationRoutes = require("./routes/notificationRoutes");
@@ -54,6 +55,7 @@ app.use("/api/fines", fineRoutes);
 app.use("/api/library-cards", libraryCardRoutes);
 app.use("/api/racks", rackRoutes);
 app.use("/api/book-items", bookItemRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
 
 app.use("/api/book-lendings", bookLendingRoutes);
 app.use("/api/book-reservations", bookReservationRoutes);
