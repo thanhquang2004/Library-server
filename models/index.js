@@ -10,6 +10,7 @@ const Rack = require("./Rack");
 const Notification = require("./Notification");
 const Author = require("./Author");
 const AuditLog = require("./AuditLog");
+const Category = require("./Category");
 
 module.exports = {
   User,
@@ -24,4 +25,5 @@ module.exports = {
   Notification,
   Author,
   AuditLog,
+  Category,
 };
