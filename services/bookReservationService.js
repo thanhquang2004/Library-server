@@ -97,11 +97,19 @@ async function getUserReservations(memberId) {
 
 // Lấy tất cả đặt trước (admin, librarian)
 async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
+    if (memberId) {
+        if (mongoose.Types.ObjectId.isValid(memberId)) {
+            query.memberId = new mongoose.Types.ObjectId(memberId);
+        } else {
+            return { error: "Invalid memberId" };
+        }
+    }
+
     const query = { isDeleted: false };
     if (
         memberId &&
         (typeof memberId === "string" ||
-         (memberId && typeof memberId === "object" && memberId.constructor && memberId.constructor.name === "ObjectId"))
+            (memberId && typeof memberId === "object" && memberId.constructor && memberId.constructor.name === "ObjectId"))
     ) {
         query.memberId = memberId;
     } else if (memberId && typeof memberId === "object") {

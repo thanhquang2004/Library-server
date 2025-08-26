@@ -4,6 +4,10 @@ const BookReservation = require("../models/BookReservation");
 const mongoose = require("mongoose");
 
 async function createLending({ bookItemId, memberId, dueDate }) {
+    if (!mongoose.Types.ObjectId.isValid(bookItemId)) {
+        throw new Error("Invalid book item ID");
+    }
+
     // Ensure bookItemId is a string or valid ObjectId and not an object
     if (typeof bookItemId !== "string" && !(bookItemId instanceof mongoose.Types.ObjectId)) {
         throw new Error("Invalid bookItemId type");
