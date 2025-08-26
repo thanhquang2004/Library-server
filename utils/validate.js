@@ -160,6 +160,14 @@ const resetPasswordSchema = Joi.object({
 });
 
 
+const createPaymentSchema = Joi.object({
+  fineId: Joi.string().hex().length(24).required(),
+  amount: Joi.number().min(0).required(),
+  method: Joi.string().valid("cash", "credit", "online").required(),
+  transactionId: Joi.string().max(100).optional().allow(null),
+});
+
+
 const createAuditLogSchema = Joi.object({
   userId: Joi.string().hex().length(24).required(),
   action: Joi.string().min(2).max(100).required(),
@@ -265,6 +273,8 @@ const validateForgotPassword = (data) =>
 const validateResetPassword = (data) =>
   resetPasswordSchema.validate(data, { abortEarly: false });
 
+const validateCreatePayment = (data) =>
+  createPaymentSchema.validate(data, { abortEarly: false });
 
 const validateCreateAuditLog = (data) =>
   createAuditLogSchema.validate(data, { abortEarly: false });
@@ -325,6 +335,8 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
+
+  validateCreatePayment,
 
   validateCreateAuditLog,
   validateCreateLending,
