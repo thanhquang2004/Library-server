@@ -134,11 +134,16 @@ const updateBookSchema = Joi.object({
   coverImage: Joi.string().uri().optional(),
 }).min(1);
 
-const validateCreateAuthor = (data) =>
-  createAuthorSchema.validate(data, { abortEarly: false });
+const createLendingSchema = Joi.object({
+  bookItemId: Joi.string().hex().length(24).required(),
+  memberId: Joi.string().hex().length(24).required(),
+  dueDate: Joi.date().iso().required()
+});
 
-const validateUpdateAuthor = (data) =>
-  updateAuthorSchema.validate(data, { abortEarly: false });
+
+const extendLendingSchema = Joi.object({
+  newDueDate: Joi.date().iso().greater("now").required()
+});
 
 const forgotPasswordSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -153,6 +158,32 @@ const resetPasswordSchema = Joi.object({
     .required(),
 });
 
+
+const createReservationSchema = Joi.object({
+  bookItemId: Joi.string().hex().length(24).required(),
+  memberId: Joi.string().hex().length(24).required(),
+});
+
+const idParamSchema = Joi.object({
+  id: Joi.string().hex().length(24).required(),
+});
+
+const createNotificationSchema = Joi.object({
+  member: Joi.string().hex().length(24).required(),
+  content: Joi.string().max(500).required(),
+  type: Joi.string().valid("info", "warning", "error").required(),
+});
+
+const memberIdParamSchema = Joi.object({
+  memberId: Joi.string().hex().length(24).required(),
+});
+
+const validateCreateAuthor = (data) =>
+  createAuthorSchema.validate(data, { abortEarly: false });
+
+const validateUpdateAuthor = (data) =>
+  updateAuthorSchema.validate(data, { abortEarly: false });
+
 const createCategorySchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().max(500).optional(),
@@ -164,6 +195,7 @@ const updateCategorySchema = Joi.object({
   description: Joi.string().max(500).optional(),
   parent: Joi.string().hex().length(24).optional().allow(null),
 }).min(1);
+
 
 const validateRegister = (data) =>
   registerSchema.validate(data, { abortEarly: false });
@@ -212,11 +244,42 @@ const validateForgotPassword = (data) =>
 const validateResetPassword = (data) =>
   resetPasswordSchema.validate(data, { abortEarly: false });
 
+const validateCreateLending = (data) => {
+  const { error } = createLendingSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
+const validateExtendLending = (data) => {
+  const { error } = extendLendingSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
+const validateCreateReservation = (data) => {
+  const { error } = createReservationSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
+const validateReservationId = (data) => {
+  const { error } = idParamSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
+const validateCreateNotification = (data) => {
+  const { error } = createNotificationSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
+const validateNotificationId = (data) => {
+  const { error } = memberIdParamSchema.validate(data, { abortEarly: false });
+  return error;
+};
+
 const validateCreateCategory = (data) =>
   createCategorySchema.validate(data, { abortEarly: false });
 
 const validateUpdateCategory = (data) =>
   updateCategorySchema.validate(data, { abortEarly: false });
+
 
 module.exports = {
   validateRegister,
@@ -237,6 +300,13 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
+  validateCreateLending,
+  validateExtendLending,
+  validateCreateReservation,
+  validateReservationId,
+  validateCreateNotification,
+  validateNotificationId
   validateCreateCategory,
   validateUpdateCategory,
+
 };
