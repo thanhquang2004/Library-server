@@ -12,7 +12,8 @@ async function createReservation({ bookItemId, memberId }) {
     validateObjectId(bookItemId, "bookItemId");
     validateObjectId(memberId, "memberId");
 
-    const bookItem = await BookItem.findById(bookItemId);
+    const bookItem = await BookItem.findOne({ _id: { $eq: bookItemId } });
+
     if (!bookItem || bookItem.status !== "available") {
         return { error: "Book not reservable" };
     }
@@ -115,8 +116,8 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
         query.status = status;
     }
 
-    page = Math.max(1, parseInt(page, 10));
-    limit = Math.min(100, Math.max(1, parseInt(limit, 10)));
+    page = Number.isInteger(Number(page)) ? Math.max(1, parseInt(page, 10)) : 1;
+    limit = Number.isInteger(Number(limit)) ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 10;
 
     const reservations = await BookReservation.find(query)
         .skip((page - 1) * limit)

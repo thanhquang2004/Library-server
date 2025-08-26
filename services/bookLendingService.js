@@ -13,14 +13,18 @@ async function createLending({ bookItemId, memberId, dueDate }) {
     validateObjectId(bookItemId, "bookItemId");
     validateObjectId(memberId, "memberId");
 
-    const bookItem = await BookItem.findById(bookItemId);
+    const bookItem = await BookItem.findOne({
+        _id: { $eq: new mongoose.Types.ObjectId(bookItemId) }
+    });
+
     if (!bookItem) throw new Error("Sách không tồn tại");
     if (bookItem.status !== "available") throw new Error("Sách đã được mượn");
 
     const bookReservation = await BookReservation.findOne({
-        bookItem: bookItemId,
-        status: { $ne: "completed" }
+        bookItem: { $eq: new mongoose.Types.ObjectId(bookItemId) },
+        status: { $ne: "completed" },
     });
+
     if (bookReservation) throw new Error("Sách đã được đặt trước");
 
     const lending = await BookLending.create({
@@ -95,32 +99,30 @@ async function checkOverdue(id) {
 }
 
 async function getLendings({ memberId, status, page = 1, limit = 10 }) {
+    page = Math.max(1, parseInt(page, 10));
+    limit = Math.min(100, Math.max(1, parseInt(limit, 10)));
+
     const query = { isDeleted: false };
 
     if (memberId) {
         validateObjectId(memberId, "memberId");
-        query.member = memberId;
+        query.memberId = { $eq: mongoose.Types.ObjectId(memberId) };
     }
 
-    if (status && ["borrowed", "returned"].includes(status)) {
-        query.status = status;
+    if (status) {
+        query.status = { $eq: status };
     }
-
-    page = Math.max(1, parseInt(page, 10));
-    limit = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
     const lendings = await BookLending.find(query)
         .populate("bookItem")
         .skip((page - 1) * limit)
-        .limit(limit)
-        .exec();
+        .limit(limit);
 
     return lendings.map(l => ({
-        bookLendingId: l._id,
+        lendingId: l._id,
         bookItem: l.bookItem,
-        member: l.member,
-        fines: l.fines,
-        creationDate: l.creationDate,
+        member: l.memberId,
+        lendingDate: l.lendingDate,
         dueDate: l.dueDate,
         returnDate: l.returnDate,
         status: l.status,
