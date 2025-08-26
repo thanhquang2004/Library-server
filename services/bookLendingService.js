@@ -1,8 +1,16 @@
 const BookLending = require("../models/BookLending");
 const BookItem = require("../models/BookItem");
 const BookReservation = require("../models/BookReservation");
+const mongoose = require("mongoose");
 
 async function createLending({ bookItemId, memberId, dueDate }) {
+    // Ensure bookItemId is a string or valid ObjectId and not an object
+    if (typeof bookItemId !== "string" && !(bookItemId instanceof mongoose.Types.ObjectId)) {
+        throw new Error("Invalid bookItemId type");
+    }
+    if (!mongoose.Types.ObjectId.isValid(bookItemId)) {
+        throw new Error("Invalid bookItemId format");
+    }
     const bookItem = await BookItem.findById(bookItemId);
     if (!bookItem) throw new Error("Sách không tồn tại");
     if (bookItem.status !== "available") throw new Error("Sách đã được mượn");
