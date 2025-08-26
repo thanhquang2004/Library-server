@@ -11,7 +11,7 @@ async function createPayment({
 }) {
   // Check if fine exists and is unpaid
   const fine = await Fine.findOne({
-    _id: fineId,
+    _id: { $eq: fineId },
     isDeleted: false,
     status: "unpaid",
   });
@@ -114,8 +114,12 @@ async function getPaymentsByMember(memberId, requestingUser) {
 // Get all payments with pagination and filters
 async function getAllPayments({ fineId, memberId, page = 1, limit = 10 }) {
   const query = { isDeleted: false };
-  if (fineId) query.fine = fineId;
+  if (fineId) query.fine = { $eq: fineId };
   if (memberId) {
+    // Check memberId is a string or ObjectId, not an object
+    if (typeof memberId !== "string" && typeof memberId !== "number") {
+      throw createError(400, "Invalid memberId");
+    }
     const fines = await Fine.find({
       member: memberId,
       isDeleted: false,
