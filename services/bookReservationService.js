@@ -2,7 +2,7 @@ const BookReservation = require("../models/BookReservation");
 const BookItem = require("../models/BookItem");
 
 async function createReservation({ bookItemId, memberId }) {
-    const bookItem = await BookItem.findById(bookItemId);
+    const bookItem = await BookItem.findOne({ _id: { $eq: bookItemId } });
     if (!bookItem || bookItem.status !== "available") {
         return { error: "Book not reservable" };
     }
