@@ -17,6 +17,7 @@ const BookLendingSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Fine",
+        default: [],
       },
     ],
     creationDate: {
