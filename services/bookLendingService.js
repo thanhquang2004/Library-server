@@ -94,7 +94,17 @@ async function checkOverdue(id) {
 
 async function getLendings({ memberId, status, page = 1, limit = 10 }) {
     const query = { isDeleted: false };
-    if (memberId) query.member = memberId;
+    // Validate and safely add memberId to query
+    if (memberId) {
+        // Only allow valid ObjectId or string values for memberId
+        if (typeof memberId === "string" && mongoose.Types.ObjectId.isValid(memberId)) {
+            query.member = { $eq: memberId };
+        } else if (memberId instanceof mongoose.Types.ObjectId) {
+            query.member = { $eq: memberId };
+        } else {
+            throw new Error("Invalid memberId format");
+        }
+    }
     if (status) query.status = status;
 
     const lendings = await BookLending.find(query)
