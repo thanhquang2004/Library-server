@@ -3,16 +3,19 @@ const createError = require("http-errors");
 
 // Create a category
 async function createCategory({ name, description, parent, requestingUser }) {
-  //   Check for duplicate name
-  const existingCategory = await Category.findOne({ name, isDeleted: false });
+  // Check for duplicate name
+  const existingCategory = await Category.findOne({
+    name: { $eq: name },
+    isDeleted: false,
+  });
   if (existingCategory) {
     throw createError(409, "Category name already exists");
   }
 
-  //   Validate parent category if provided
+  // Validate parent category if provided
   if (parent) {
     const parentCategory = await Category.findOne({
-      _id: parent,
+      _id: { $eq: parent },
       isDeleted: false,
     });
     if (!parentCategory) {
@@ -56,22 +59,33 @@ async function createCategory({ name, description, parent, requestingUser }) {
 
 // Update a category
 async function updateCategory(categoryId, updates, requestingUser) {
+  // Only allow specific fields to be updated
+  const allowedKeys = ["name", "description", "parent"];
+  const safeUpdates = {};
+  for (const key of allowedKeys) {
+    if (Object.prototype.hasOwnProperty.call(updates, key)) {
+      safeUpdates[key] = updates[key];
+    }
+  }
+
   // Check for duplicate name
   if (updates.name) {
-    const existingCategory = await Category.findOne({
-      name: updates.name,
-      isDeleted: false,
-      _id: { $ne: categoryId },
-    });
-    if (existingCategory) {
-      throw createError(409, "Category name already exists");
+    if (safeUpdates.name) {
+      const existingCategory = await Category.findOne({
+        name: updates.name,
+        isDeleted: false,
+        _id: { $ne: categoryId },
+      });
+      if (existingCategory) {
+        throw createError(409, "Category name already exists");
+      }
     }
   }
 
   // Validate parent category if updated
   if (updates.parent) {
     const parentCategory = await Category.findOne({
-      _id: updates.parent,
+      _id: { $eq: updates.parent },
       isDeleted: false,
     });
     if (!parentCategory) {
@@ -87,8 +101,10 @@ async function updateCategory(categoryId, updates, requestingUser) {
   const category = await Category.findOneAndUpdate(
     { _id: categoryId, isDeleted: false },
     { $set: updates },
+    { $set: safeUpdates },
     { new: true, runValidators: true }
   );
+
   if (!category) {
     throw createError(404, "Category not found");
   }
@@ -124,7 +140,7 @@ async function updateCategory(categoryId, updates, requestingUser) {
 async function getAllCategories({ page = 1, limit = 10, parent }) {
   const query = { isDeleted: false };
   if (parent) {
-    query.parent = parent;
+    query.parent = { $eq: parent };
   } else if (parent === null) {
     query.parent = null;
   }
