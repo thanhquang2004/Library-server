@@ -109,7 +109,7 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
 
     if (memberId) {
         validateObjectId(memberId, "memberId");
-        query.member = memberId;
+        query.member = new mongoose.Types.ObjectId(memberId);
     }
 
     if (status && ["pending", "completed", "cancelled", "expired"].includes(status)) {
