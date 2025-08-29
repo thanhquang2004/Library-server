@@ -344,7 +344,7 @@ module.exports = {
   validateCreateReservation,
   validateReservationId,
   validateCreateNotification,
-  validateNotificationId
+  validateNotificationId,
   validateCreateCategory,
   validateUpdateCategory,
 
