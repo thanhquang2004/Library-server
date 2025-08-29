@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const auditLogController = require("../controllers/auditlogController");
+const auditLogController = require("../controllers/auditLogController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 const rateLimiter = require("../middlewares/rateLimiter");
