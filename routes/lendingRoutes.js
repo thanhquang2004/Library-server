@@ -1,11 +1,32 @@
 const express = require("express");
 const router = express.Router();
 const lendingController = require("../controllers/lendingController");
-const { auth, isLibrarian } = require("../middlewares/authMiddleware");
+const authenticate = require("../middlewares/authMiddleware");
+const roleMiddleware = require("../middlewares/roleMiddleware");
 
-router.get("/", auth, isLibrarian, lendingController.getLendings);
-router.get("/:id", auth, isLibrarian, lendingController.getLendingById);
-router.post("/", auth, isLibrarian, lendingController.createLending);
-router.put("/:id/return", auth, isLibrarian, lendingController.returnLending);
+router.get(
+  "/",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  lendingController.getLendings
+);
+router.get(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  lendingController.getLendingById
+);
+router.post(
+  "/",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  lendingController.createLending
+);
+router.put(
+  "/:id/return",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  lendingController.returnLending
+);
 
 module.exports = router;

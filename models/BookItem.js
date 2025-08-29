@@ -1,18 +1,60 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
+const AuditLog = require("./AuditLog");
 
-const BookItemSchema = new mongoose.Schema({
-  book: { type: mongoose.Schema.Types.ObjectId, ref: 'Book' },
-  barcode: String,
-  isReferenceOnly: { type: Boolean, default: false },
-  borrowed: Date,
-  dueDate: Date,
-  price: Number,
-  status: { type: String, enum: ['available', 'reserved', 'loaned', 'lost'], default: 'available' },
-  dateOfPurchase: Date,
-  placedAt: {
-    rack: { type: mongoose.Schema.Types.ObjectId, ref: 'Rack' },
-    locationIdentifier: String
-  }
-}, { timestamps: true });
+const BookItemSchema = new mongoose.Schema(
+  {
+    book: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Book",
+      required: true,
+    },
+    barcode: {
+      type: String,
+      unique: true,
+    },
+    isReferenceOnly: {
+      type: Boolean,
+      default: false,
+    },
+    price: {
+      type: Number,
+    },
+    status: {
+      type: String,
+      enum: ["available", "loaned", "reserved"],
+      default: "available",
+    },
+    dateOfPurchase: {
+      type: Date,
+      default: Date.now,
+    },
+    rack: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rack",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('BookItem', BookItemSchema);
+BookItemSchema.index({ book: 1, status: 1 });
+
+BookItemSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
+
+module.exports = mongoose.model("BookItem", BookItemSchema);

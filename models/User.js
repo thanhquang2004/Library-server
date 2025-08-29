@@ -1,34 +1,57 @@
 const mongoose = require("mongoose");
-
-const LibraryCardSchema = new mongoose.Schema({
-  cardNumber: String,
-  issued: Date,
-  active: { type: Boolean, default: true },
-});
+const bcrypt = require("bcryptjs");
+const AuditLog = require("./AuditLog");
 
 const UserSchema = new mongoose.Schema(
   {
-    name: String,
-    email: { type: String, unique: true },
-    password: String,
-    address: String,
-    phone: String,
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true, index: true },
+    password: { type: String, required: true },
     role: {
       type: String,
       enum: ["member", "librarian", "admin"],
-      default: "member",
+      required: true,
     },
-    dateOfMembership: Date,
-    totalBooksCheckedOut: { type: Number, default: 0 },
+    address: { type: String },
+    phone: { type: String },
+    dateOfMembership: { type: Date, default: Date.now },
+    totalBooksCheckedout: { type: Number, default: 0 },
     accountStatus: {
       type: String,
       enum: ["active", "blocked"],
       default: "active",
     },
-    libraryCard: LibraryCardSchema,
+    libraryCard: { type: mongoose.Schema.Types.ObjectId, ref: "LibraryCard" },
     fines: [{ type: mongoose.Schema.Types.ObjectId, ref: "Fine" }],
+    preferences: [{ type: String }],
+    language: { type: String, default: "vi" },
+    lastLogin: { type: Date },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
+// So sánh mật khẩu
+UserSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+// Ghi nhật ký hành động
+UserSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 module.exports = mongoose.model("User", UserSchema);
