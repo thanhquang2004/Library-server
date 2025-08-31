@@ -20,12 +20,29 @@ const loginSchema = Joi.object({
 
 const updateUserSchema = Joi.object({
   name: Joi.string().min(2).max(50).optional(),
+  email: Joi.string().email().optional(),
   address: Joi.string().max(200).optional(),
   phone: Joi.string()
     .pattern(/^[0-9]{10,15}$/)
+    .message("Phone must be 10–15 digits")
     .optional(),
   preferences: Joi.array().items(Joi.string()).optional(),
   language: Joi.string().max(50).optional(),
+}).min(1);
+
+const adminUpdateUserSchema = Joi.object({
+  name: Joi.string().min(2).max(50).optional(),
+  email: Joi.string().email().optional(),
+  role: Joi.string().valid("member", "librarian", "admin").optional(),
+  address: Joi.string().max(200).optional(),
+  phone: Joi.string()
+    .pattern(/^[0-9]{10,15}$/)
+    .message("Phone must be 10–15 digits")
+    .optional(),
+  preferences: Joi.array().items(Joi.string()).optional(),
+  language: Joi.string().max(50).optional(),
+  accountStatus: Joi.string().valid("active", "blocked").optional(),
+  isDeleted: Joi.boolean().optional(),
 }).min(1);
 
 const createLibraryCardSchema = Joi.object({
@@ -137,13 +154,11 @@ const updateBookSchema = Joi.object({
 const createLendingSchema = Joi.object({
   bookItemId: Joi.string().hex().length(24).required(),
   memberId: Joi.string().hex().length(24).required(),
-  dueDate: Joi.date().iso().required()
+  dueDate: Joi.date().iso().required(),
 });
 
-
-
 const extendLendingSchema = Joi.object({
-  newDueDate: Joi.date().iso().greater("now").required()
+  newDueDate: Joi.date().iso().greater("now").required(),
 });
 
 const forgotPasswordSchema = Joi.object({
@@ -159,14 +174,12 @@ const resetPasswordSchema = Joi.object({
     .required(),
 });
 
-
 const createPaymentSchema = Joi.object({
   fineId: Joi.string().hex().length(24).required(),
   amount: Joi.number().min(0).required(),
   method: Joi.string().valid("cash", "credit", "online").required(),
   transactionId: Joi.string().max(100).optional().allow(null),
 });
-
 
 const createAuditLogSchema = Joi.object({
   userId: Joi.string().hex().length(24).required(),
@@ -187,7 +200,6 @@ const createAuditLogSchema = Joi.object({
   }).optional(),
   details: Joi.string().max(500).optional(),
 });
-
 
 const createReservationSchema = Joi.object({
   bookItemId: Joi.string().hex().length(24).required(),
@@ -235,6 +247,9 @@ const validateLogin = (data) =>
 const validateUpdateUser = (data) =>
   updateUserSchema.validate(data, { abortEarly: false });
 
+const validateUpdateUserByAdmin = (data) =>
+  adminUpdateUserSchema.validate(data, { abortEarly: false });
+
 const validateChangePasswordUser = (data) =>
   changePasswordSchema.validate(data, { abortEarly: false });
 
@@ -246,6 +261,7 @@ const validateToggleCardStatus = (data) =>
 
 const validateCreateRack = (data) =>
   createRackSchema.validate(data, { abortEarly: false });
+
 const validateUpdateRack = (data) =>
   updateRackSchema.validate(data, { abortEarly: false });
 
@@ -290,7 +306,9 @@ const validateExtendLending = (data) => {
 };
 
 const validateCreateReservation = (data) => {
-  const { error } = createReservationSchema.validate(data, { abortEarly: false });
+  const { error } = createReservationSchema.validate(data, {
+    abortEarly: false,
+  });
   return error;
 };
 
@@ -300,7 +318,9 @@ const validateReservationId = (data) => {
 };
 
 const validateCreateNotification = (data) => {
-  const { error } = createNotificationSchema.validate(data, { abortEarly: false });
+  const { error } = createNotificationSchema.validate(data, {
+    abortEarly: false,
+  });
   return error;
 };
 
@@ -314,7 +334,6 @@ const validateCreateCategory = (data) =>
 
 const validateUpdateCategory = (data) =>
   updateCategorySchema.validate(data, { abortEarly: false });
-
 
 module.exports = {
   validateRegister,
@@ -335,9 +354,7 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
-
   validateCreatePayment,
-
   validateCreateAuditLog,
   validateCreateLending,
   validateExtendLending,
@@ -347,5 +364,5 @@ module.exports = {
   validateNotificationId,
   validateCreateCategory,
   validateUpdateCategory,
-
+  validateUpdateUserByAdmin,
 };

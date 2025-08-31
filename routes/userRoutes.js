@@ -14,8 +14,15 @@ router.get(
 router.put(
   "/:id",
   authenticate,
-  roleMiddleware(["member", "librarian", "admin"]),
+  roleMiddleware(["member", "librarian"]),
   userController.updateUser
+);
+
+router.put(
+  "/:id/byAdmin",
+  authenticate,
+  roleMiddleware(["admin"]),
+  userController.updateUserByAdmin
 );
 
 router.post(
