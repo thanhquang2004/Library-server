@@ -18,6 +18,11 @@ async function createAuditLog({ userId, action, target, details }) {
     "Fine",
     "LibraryCard",
     "Rack",
+    "Book",
+    "Author",
+    "BookLending",
+    "BookReservation",
+    "Category",
   ];
   if (target && target.model && !validModels.includes(target.model)) {
     throw createError(400, "Invalid target model");
@@ -69,6 +74,11 @@ async function getAuditLogsByModel(model, { page = 1, limit = 10 }) {
     "Fine",
     "LibraryCard",
     "Rack",
+    "Book",
+    "Author",
+    "BookLending",
+    "BookReservation",
+    "Category",
   ];
   if (!validModels.includes(model)) {
     throw createError(400, "Invalid target model");
@@ -115,6 +125,11 @@ async function getAllAuditLogs({
       "Fine",
       "LibraryCard",
       "Rack",
+      "Book",
+      "Author",
+      "BookLending",
+      "BookReservation",
+      "Category",
     ];
     if (!validModels.includes(model)) {
       throw createError(400, "Invalid target model");
