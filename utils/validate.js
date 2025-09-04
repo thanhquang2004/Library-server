@@ -335,9 +335,7 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
-
   validateCreatePayment,
-
   validateCreateAuditLog,
   validateCreateLending,
   validateExtendLending,

@@ -24,6 +24,19 @@ exports.updateAuthor = async (id, data) => {
   return author;
 };
 
+exports.getAllAuthors = async () => {
+  const authors = await Author.find().populate("books");
+
+  return authors.map(author => ({
+    authorId: author._id,
+    name: author.name,
+    description: author.description,
+    birthDate: author.birthDate,
+    nationality: author.nationality,
+    books: author.books,
+  }));
+};
+
 exports.getAuthor = async (id) => {
   const author = await Author.findById(id).populate('books');
   if (!author) throw new Error("Author not found");
