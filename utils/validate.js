@@ -335,16 +335,14 @@ module.exports = {
   validateUpdateBook,
   validateForgotPassword,
   validateResetPassword,
-
   validateCreatePayment,
-
   validateCreateAuditLog,
   validateCreateLending,
   validateExtendLending,
   validateCreateReservation,
   validateReservationId,
   validateCreateNotification,
-  validateNotificationId
+  validateNotificationId,
   validateCreateCategory,
   validateUpdateCategory,
 

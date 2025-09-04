@@ -66,6 +66,15 @@ exports.getBooksByAuthor = async (req, res) => {
   }
 };
 
+exports.getAllAuthors = async (req, res) => {
+  try {
+    const authors = await authorService.getAllAuthors();
+    res.status(200).json(authors);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.searchAuthors = async (req, res) => {
   try {
     const result = await authorService.searchAuthors(req.query.name);

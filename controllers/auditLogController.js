@@ -3,7 +3,7 @@ const {
   getAuditLogsByUser,
   getAuditLogsByModel,
   getAllAuditLogs,
-} = require("../services/auditlogService");
+} = require("../services/auditLogService");
 const { validateCreateAuditLog } = require("../utils/validate");
 
 exports.createAuditLog = async (req, res, next) => {
