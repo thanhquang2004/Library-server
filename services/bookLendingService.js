@@ -9,52 +9,71 @@ function validateObjectId(id, name = "id") {
   }
 }
 
-async function createLending({ bookItemId, memberId, dueDate }) {
-  validateObjectId(bookItemId, "bookItemId");
-  validateObjectId(memberId, "memberId");
+async function createLending({ bookItemId, memberId, dueDate, requestingUser }) {
+    validateObjectId(bookItemId, "bookItemId");
+    validateObjectId(memberId, "memberId");
 
-  const bookItem = await BookItem.findOne({
-    _id: { $eq: new mongoose.Types.ObjectId(bookItemId) },
-  });
+    const bookItem = await BookItem.findOne({
+        _id: { $eq: new mongoose.Types.ObjectId(bookItemId) }
+    });
 
-  if (!bookItem) throw new Error("Sách không tồn tại");
-  if (bookItem.status !== "available") throw new Error("Sách đã được mượn");
+    if (!bookItem) throw new Error("Sách không tồn tại");
+    if (bookItem.status !== "available") throw new Error("Sách đã được mượn");
 
-  const bookReservation = await BookReservation.findOne({
-    bookItem: { $eq: new mongoose.Types.ObjectId(bookItemId) },
-    status: { $ne: "completed" },
-  });
+    const bookReservation = await BookReservation.findOne({
+        bookItem: { $eq: new mongoose.Types.ObjectId(bookItemId) },
+        status: { $ne: "completed" },
+    });
 
-  if (bookReservation) throw new Error("Sách đã được đặt trước");
+    if (bookReservation) throw new Error("Sách đã được đặt trước");
 
-  const lending = await BookLending.create({
-    bookItem: bookItemId,
-    member: memberId,
-    fines: null,
-    creationDate: new Date(),
-    dueDate,
-    returnDate: null,
-    status: "borrowed",
-    isDeleted: false,
-  });
+    const lending = await BookLending.create({
+        bookItem: bookItemId,
+        member: memberId,
+        fines: null,
+        creationDate: new Date(),
+        dueDate,
+        returnDate: null,
+        status: "borrowed",
+        isDeleted: false
+    });
 
-  bookItem.status = "loaned";
-  await bookItem.save();
+    bookItem.status = "loaned";
+    await bookItem.save();
 
-  return {
-    bookLendingId: lending._id,
-    bookItem: lending.bookItem,
-    member: lending.member,
-    fines: lending.fines,
-    creationDate: lending.creationDate,
-    dueDate: lending.dueDate,
-    returnDate: lending.returnDate,
-    status: lending.status,
-  };
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "create_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending created"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending created for item "${bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
+    return {
+        bookLendingId: lending._id,
+        bookItem: lending.bookItem,
+        member: lending.member,
+        fines: lending.fines,
+        creationDate: lending.creationDate,
+        dueDate: lending.dueDate,
+        returnDate: lending.returnDate,
+        status: lending.status,
+    };
 }
 
-async function returnBook(id) {
-  validateObjectId(id, "lendingId");
+async function returnBook(id, requestingUser) {
+    validateObjectId(id, "lendingId");
 
   const lending = await BookLending.findById(id).populate("bookItem");
   if (!lending || lending.isDeleted) return null;
@@ -63,10 +82,29 @@ async function returnBook(id) {
   lending.status = "returned";
   await lending.save();
 
-  if (lending.bookItem) {
-    lending.bookItem.status = "available";
-    await lending.bookItem.save();
-  }
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "return_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending returned"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending returned for item "${bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
+    if (lending.bookItem) {
+        lending.bookItem.status = "available";
+        await lending.bookItem.save();
+    }
 
   return {
     bookLendingId: lending._id,
@@ -75,8 +113,8 @@ async function returnBook(id) {
   };
 }
 
-async function extendLending(id, newDueDate) {
-  validateObjectId(id, "lendingId");
+async function extendLending(id, newDueDate, requestingUser) {
+    validateObjectId(id, "lendingId");
 
   const lending = await BookLending.findById(id);
   if (!lending || lending.isDeleted) return null;
@@ -85,18 +123,55 @@ async function extendLending(id, newDueDate) {
   lending.dueDate = newDueDate;
   await lending.save();
 
-  return { bookLendingId: lending._id, dueDate: lending.dueDate };
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "extend_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending extended"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending extended for item "${lending._id}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
+    return { bookLendingId: lending._id, dueDate: lending.dueDate };
 }
 
-async function checkOverdue(id) {
-  validateObjectId(id, "lendingId");
+async function checkOverdue(id, requestingUser) {
+    validateObjectId(id, "lendingId");
 
   const lending = await BookLending.findById(id);
   if (!lending || lending.isDeleted) return null;
 
-  const overdue =
-    new Date() > new Date(lending.dueDate) && lending.status === "borrowed";
-  return { bookLendingId: lending._id, overdue };
+    const overdue = new Date() > new Date(lending.dueDate) && lending.status === "borrowed";
+
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "check_overdue",
+        { id: lending._id, model: "BookLending" },
+        "Book lending overdue checked"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending overdue checked for item "${lending._id}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+    return { bookLendingId: lending._id, overdue };
 }
 
 async function getLendings({ memberId, status, page = 1, limit = 10 }) {
@@ -150,7 +225,6 @@ async function getLendingById(id) {
     status: lending.status,
   };
 }
-
 async function deleteLending(id) {
   validateObjectId(id, "lendingId");
 
@@ -167,7 +241,6 @@ async function hardDeleteLending(id) {
 
   const lending = await BookLending.findById(id);
   if (!lending) return null;
-
   await BookLending.deleteOne({ _id: id });
   return true;
 }

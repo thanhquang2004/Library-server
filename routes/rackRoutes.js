@@ -52,4 +52,11 @@ router.delete(
   rackController.deleteRack
 );
 
+router.delete(
+  "/hardDelete/:id",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  rackController.absoluteDeleteRack
+);
+
 module.exports = router;

@@ -158,7 +158,7 @@ async function deletePayment(paymentId, requestingUser) {
   // Log action and notify member and admins/librarians
   await Payment.logAction(
     requestingUser.userId,
-    "delete_payment",
+    "Soft_delete_payment",
     { id: payment._id, model: "Payment" },
     "Payment soft deleted"
   );
@@ -179,7 +179,46 @@ async function deletePayment(paymentId, requestingUser) {
     });
   }
 
+  await payment.save();
+
   return { message: "Payment deleted" };
+}
+
+async function absoluteDeletePayment(paymentId, requestingUser) {
+  const payment = await Payment.findOne(
+    { _id: paymentId, isDeleted: true }
+  );
+  if (!payment) {
+    throw createError(404, "Payment not found");
+  }
+
+  // Log action and notify member and admins/librarians
+  await Payment.logAction(
+    requestingUser.userId,
+    "Absolute_delete_payment",
+    { id: payment._id, model: "Payment" },
+    "Payment absolutely deleted"
+  );
+  await Notification.create({
+    member: fine.member,
+    content: `The payment of ${payment.amount} for fine "${fine.reason}" has been absolutely deleted.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Payment of ${payment.amount} for fine "${fine.reason}" by ${user.name} has been absolutely deleted.`,
+      type: "email",
+    });
+  }
+
+  await payment.deleteOne();
+
+  return { message: "Payment absolutely deleted" };
 }
 
 module.exports = {
@@ -188,4 +227,5 @@ module.exports = {
   getPaymentsByMember,
   getAllPayments,
   deletePayment,
+  absoluteDeletePayment
 };

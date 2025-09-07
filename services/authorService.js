@@ -1,16 +1,37 @@
-const Author = require("../models/Author");
-const Book = require("../models/Book");
+const Author = require('../models/Author');
+const Book = require('../models/Book');
+const Notification = require('../models/Notification');
 
-exports.createAuthor = async (data) => {
+exports.createAuthor = async (data, requestingUser) => {
   const { name, description, birthDate, nationality } = data;
   if (!name) throw new Error("Invalid data");
 
   const author = new Author({ name, description, birthDate, nationality });
   await author.save();
+
+  // Log action and notify admins/librarians
+  await Author.logAction(
+    requestingUser.userId,
+    "create_author",
+    { id: author._id, model: "Author" },
+    "Author created"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Author "${author.name}" has been created.`,
+      type: "email",
+    });
+  }
+
   return author;
 };
 
-exports.updateAuthor = async (id, data) => {
+exports.updateAuthor = async (id, data, requestingUser) => {
   const author = await Author.findById(id);
   if (!author) throw new Error("Author not found");
 
@@ -21,6 +42,25 @@ exports.updateAuthor = async (id, data) => {
   author.books = data.books ?? author.books;
 
   await author.save();
+
+  // Log action and notify admins/librarians
+  await Author.logAction(
+    requestingUser.userId,
+    "update_author",
+    { id: author._id, model: "Author" },
+    "Author updated"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Author "${author.name}" has been updated.`,
+      type: "email",
+    });
+  }
   return author;
 };
 
@@ -75,12 +115,31 @@ exports.searchAuthors = async (name) => {
   }));
 };
 
-exports.deleteAuthor = async (id) => {
+exports.deleteAuthor = async (id, requestingUser) => {
   const author = await Author.findById(id);
   if (!author) throw new Error("Author not found");
 
   if (author.books && author.books.length > 0) {
     throw new Error("Author cannot be deleted: still referenced by books");
+  }
+
+  // Log action and notify admins/librarians
+  await Author.logAction(
+    requestingUser.userId,
+    "soft_delete_author",
+    { id: author._id, model: "Author" },
+    "Author soft deleted"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Author "${author.name}" has been soft deleted.`,
+      type: "email",
+    });
   }
 
   author.isDeleted = true;

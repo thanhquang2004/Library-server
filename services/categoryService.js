@@ -250,7 +250,7 @@ async function deleteCategory(categoryId, requestingUser) {
   // Log action and notify admins/librarians
   await Category.logAction(
     requestingUser.userId,
-    "delete_category",
+    "Soft_delete_category",
     { id: category._id, model: "Category" },
     `Category ${category.name} deleted`
   );
@@ -266,7 +266,7 @@ async function deleteCategory(categoryId, requestingUser) {
     });
   }
 
-  return { message: "Category deleted" };
+  return { message: "Category soft deleted" };
 }
 
 // Delete a category (soft delete)

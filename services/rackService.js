@@ -159,6 +159,38 @@ async function deleteRack(rackId, requestingUser) {
   return { message: "Rack deleted" };
 }
 
+async function absoluteDeleteRack(rackId, requestingUser) {
+  const rack = await Rack.findOne(
+    { _id: rackId, isDeleted: true }
+  );
+  if (!rack) {
+    throw createError(404, "Rack not found");
+  }
+
+  // Log action and notify admins/librarians
+  await Rack.logAction(
+    requestingUser.userId,
+    "absolute_delete_rack",
+    { id: rack._id, model: "Rack" },
+    "Rack absolute deleted"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Rack "${rack.code}" in library has been absolutely removed.`,
+      type: "email",
+    });
+  }
+
+  await rack.deleteOne();
+
+  return { message: "Rack absolutely deleted" };
+}
+
 module.exports = {
   createRack,
   updateRack,
@@ -166,4 +198,5 @@ module.exports = {
   getAllRacks,
   getBooksOnRack,
   deleteRack,
+  absoluteDeleteRack
 };

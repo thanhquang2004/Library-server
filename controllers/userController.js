@@ -7,6 +7,7 @@ const {
   toggleAccountStatus,
   changePassword,
   deleteUser,
+  absoluteDeleteUser,
   resetPassword,
   requestPasswordReset,
   updateUserByAdmin,
@@ -118,6 +119,15 @@ exports.changePassword = async (req, res, next) => {
 exports.deleteUser = async (req, res, next) => {
   try {
     const result = await deleteUser(req.params.id, req.user);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.absoluteDeleteUser = async (req, res, next) => {
+  try {
+    const result = await absoluteDeleteUser(req.params.id, req.user);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

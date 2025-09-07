@@ -40,4 +40,11 @@ router.delete(
   fineController.deleteFine
 );
 
+router.delete(
+  "/hardDelete/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  fineController.absoluteDeleteFine
+);
+
 module.exports = router;
