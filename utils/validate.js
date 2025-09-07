@@ -20,12 +20,29 @@ const loginSchema = Joi.object({
 
 const updateUserSchema = Joi.object({
   name: Joi.string().min(2).max(50).optional(),
+  email: Joi.string().email().optional(),
   address: Joi.string().max(200).optional(),
   phone: Joi.string()
     .pattern(/^[0-9]{10,15}$/)
+    .message("Phone must be 10–15 digits")
     .optional(),
   preferences: Joi.array().items(Joi.string()).optional(),
   language: Joi.string().max(50).optional(),
+}).min(1);
+
+const adminUpdateUserSchema = Joi.object({
+  name: Joi.string().min(2).max(50).optional(),
+  email: Joi.string().email().optional(),
+  role: Joi.string().valid("member", "librarian", "admin").optional(),
+  address: Joi.string().max(200).optional(),
+  phone: Joi.string()
+    .pattern(/^[0-9]{10,15}$/)
+    .message("Phone must be 10–15 digits")
+    .optional(),
+  preferences: Joi.array().items(Joi.string()).optional(),
+  language: Joi.string().max(50).optional(),
+  accountStatus: Joi.string().valid("active", "blocked").optional(),
+  isDeleted: Joi.boolean().optional(),
 }).min(1);
 
 const createLibraryCardSchema = Joi.object({
@@ -230,6 +247,9 @@ const validateLogin = (data) =>
 const validateUpdateUser = (data) =>
   updateUserSchema.validate(data, { abortEarly: false });
 
+const validateUpdateUserByAdmin = (data) =>
+  adminUpdateUserSchema.validate(data, { abortEarly: false });
+
 const validateChangePasswordUser = (data) =>
   changePasswordSchema.validate(data, { abortEarly: false });
 
@@ -241,6 +261,7 @@ const validateToggleCardStatus = (data) =>
 
 const validateCreateRack = (data) =>
   createRackSchema.validate(data, { abortEarly: false });
+
 const validateUpdateRack = (data) =>
   updateRackSchema.validate(data, { abortEarly: false });
 
@@ -343,4 +364,5 @@ module.exports = {
   validateNotificationId,
   validateCreateCategory,
   validateUpdateCategory,
+  validateUpdateUserByAdmin,
 };
