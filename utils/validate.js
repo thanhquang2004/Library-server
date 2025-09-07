@@ -125,7 +125,7 @@ const createBookSchema = Joi.object({
   categories: Joi.array().items(Joi.string()).required(), // ObjectId list
   publisher: Joi.string().min(2).max(200).required(),
   publicationDate: Joi.date().required(),
-  language: Joi.string().min(2).max(50).required(),
+  bookLanguage: Joi.string().min(2).max(50).required(),
   numberOfPages: Joi.number().integer().min(1).required(),
   format: Joi.string()
     .valid("hardcover", "paperback", "ebook", "audiobook")
@@ -141,7 +141,7 @@ const updateBookSchema = Joi.object({
   categories: Joi.array().items(Joi.string()).optional(),
   publisher: Joi.string().min(2).max(200).optional(),
   publicationDate: Joi.date().optional(),
-  language: Joi.string().min(2).max(50).optional(),
+  bookLanguage: Joi.string().min(2).max(50).optional(),
   numberOfPages: Joi.number().integer().min(1).optional(),
   format: Joi.string()
     .valid("hardcover", "paperback", "ebook", "audiobook")
