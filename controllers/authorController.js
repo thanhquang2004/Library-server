@@ -1,4 +1,4 @@
-const authorService = require('../services/authorService');
+const authorService = require("../services/authorService");
 
 const {
   validateCreateAuthor,
@@ -16,7 +16,7 @@ exports.createAuthor = async (req, res) => {
       description: author.description,
       birthDate: author.birthDate,
       nationality: author.nationality,
-      books: author.books
+      books: author.books,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -35,7 +35,7 @@ exports.updateAuthor = async (req, res) => {
       description: author.description,
       birthDate: author.birthDate,
       nationality: author.nationality,
-      books: author.books
+      books: author.books,
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
@@ -50,8 +50,8 @@ exports.getAuthor = async (req, res) => {
       name: author.name,
       description: author.description,
       nationality: author.nationality,
-      books: author.books
-    });;
+      books: author.books,
+    });
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
@@ -90,5 +90,15 @@ exports.deleteAuthor = async (req, res) => {
     res.status(200).json({ message: "Author deleted (soft)" });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+exports.hardDeleteAuthor = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await authorService.hardDeleteAuthor(id);
+    res.status(200).json({ message: "Author hard deleted successful" });
+  } catch (err) {
+    next(err);
   }
 };
