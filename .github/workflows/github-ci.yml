@@ -73,8 +73,8 @@ jobs:
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
 
             # Stop and remove existing container
-            docker stop server || true
-            docker rm server || true
+            docker stop library-server || true
+            docker rm library-server || true
 
             # Remove old images
             docker rmi ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest || true

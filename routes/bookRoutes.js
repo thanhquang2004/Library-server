@@ -5,10 +5,20 @@ const authenticate = require("../middlewares/authMiddleware");
 const roleMiddleware = require("../middlewares/roleMiddleware");
 
 // POST - create book
-router.post("/", authenticate, roleMiddleware(["librarian", "admin"]), bookController.createBook);
+router.post(
+  "/",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  bookController.createBook
+);
 
 // PUT - update book
-router.put("/:id", authenticate, roleMiddleware(["librarian", "admin"]), bookController.updateBook);
+router.put(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  bookController.updateBook
+);
 
 // GET - search books
 router.get("/search", authenticate, bookController.searchBooks);
@@ -23,6 +33,18 @@ router.get("/:id/items", authenticate, bookController.getBookItems);
 router.get("/:id/available", authenticate, bookController.checkAvailable);
 
 // DELETE - delete book
-router.delete("/:id", authenticate, roleMiddleware(["librarian", "admin"]), bookController.deleteBook);
+router.delete(
+  "/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  bookController.deleteBook
+);
 
+// HADR DELETE
+router.delete(
+  "/hardDelete/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  bookController.hardDeleteBook
+);
 module.exports = router;

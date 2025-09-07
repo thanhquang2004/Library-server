@@ -124,6 +124,48 @@ async function updateUser(userId, updates, requestingUser) {
     name: user.name,
     email: user.email,
     role: user.role,
+    phone: user.phone,
+    address: user.address,
+    preferences: user.preferences,
+    language: user.language,
+  };
+}
+
+// Update user with admin privileges
+async function updateUserByAdmin(userId, filteredUpdates, requestingUser) {
+  if (requestingUser.role !== "admin") {
+    throw createError(403, "Only admin can update this user");
+  }
+
+  const user = await User.findOneAndUpdate(
+    { _id: userId },
+    { $set: filteredUpdates },
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  await User.logAction(
+    requestingUser.userId,
+    "admin_update_user",
+    { id: user._id, model: "User" },
+    "Admin updated user"
+  );
+
+  return {
+    userId: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone,
+    address: user.address,
+    accountStatus: user.accountStatus,
+    preferences: user.preferences,
+    language: user.language,
+    isDeleted: user.isDeleted,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -383,4 +425,5 @@ module.exports = {
   absoluteDeleteUser,
   requestPasswordReset,
   resetPassword,
+  updateUserByAdmin,
 };

@@ -5,6 +5,7 @@ const {
   getBooksByCategory,
   getSubcategories,
   deleteCategory,
+  hardDeleteCategory,
 } = require("../services/categoryService");
 const {
   validateCreateCategory,
@@ -73,6 +74,15 @@ exports.deleteCategory = async (req, res, next) => {
   try {
     const result = await deleteCategory(req.params.id, req.user);
     res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.hardDeleteCategory = async (req, res, next) => {
+  try {
+    const result = await hardDeleteCategory(req.params.id, req.user);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

@@ -10,12 +10,14 @@ const {
   absoluteDeleteUser,
   resetPassword,
   requestPasswordReset,
+  updateUserByAdmin,
 } = require("../services/userService");
 const {
   validateUpdateUser,
   validateChangePasswordUser,
   validateForgotPassword,
   validateResetPassword,
+  validateUpdateUserByAdmin,
 } = require("../utils/validate");
 
 exports.getUser = async (req, res, next) => {
@@ -35,6 +37,26 @@ exports.updateUser = async (req, res, next) => {
     }
 
     const user = await updateUser(req.params.id, req.body, req.user);
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateUserByAdmin = async (req, res, next) => {
+  try {
+    const { error, value } = validateUpdateUserByAdmin(req.body);
+    if (error) {
+      return res
+        .status(400)
+        .json({ error: error.details.map((d) => d.message) });
+    }
+
+    const userId = req.params.id;
+    const requestingUser = req.user;
+
+    const user = await updateUserByAdmin(userId, value, requestingUser);
+
     res.status(200).json({ success: true, data: user });
   } catch (error) {
     next(error);

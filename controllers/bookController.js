@@ -1,9 +1,6 @@
 const bookService = require("../services/bookService");
 
-const {
-  validateCreateBook,
-  validateUpdateBook
-} = require("../utils/validate");
+const { validateCreateBook, validateUpdateBook } = require("../utils/validate");
 
 exports.createBook = async (req, res) => {
   try {
@@ -68,6 +65,15 @@ exports.checkAvailable = async (req, res) => {
 exports.deleteBook = async (req, res) => {
   try {
     const result = await bookService.deleteBook(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(404).json({ error: err.message });
+  }
+};
+
+exports.hardDeleteBook = async (req, res) => {
+  try {
+    const result = await bookService.hardDeleteBook(req.params.id);
     res.json(result);
   } catch (err) {
     res.status(404).json({ error: err.message });

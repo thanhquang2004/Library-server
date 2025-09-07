@@ -47,4 +47,11 @@ router.delete(
   bookItemController.deleteBookItem
 );
 
+// Hard delete book item (admin/librarian)
+router.delete(
+  "/hardDelete/:id",
+  authMiddleware,
+  roleMiddleware(["admin", "librarian"]),
+  bookItemController.hardDeleteBookItem
+);
 module.exports = router;

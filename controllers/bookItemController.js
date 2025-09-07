@@ -5,6 +5,7 @@ const {
   getAllBookItems,
   updateBookItemStatus,
   deleteBookItem,
+  hardDeleteBookItem,
 } = require("../services/bookItemService");
 const {
   validateCreateBookItem,
@@ -83,6 +84,15 @@ exports.deleteBookItem = async (req, res, next) => {
   try {
     const result = await deleteBookItem(req.params.id, req.user);
     res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.hardDeleteBookItem = async (req, res, next) => {
+  try {
+    const result = await hardDeleteBookItem(req.params.id, req.user);
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }
