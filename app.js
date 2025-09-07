@@ -24,7 +24,6 @@ const bookReservationRoutes = require("./routes/bookReservation");
 const notificationRoutes = require("./routes/notificationRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 
-
 app.use(cors());
 app.use(
   cors({
@@ -42,7 +41,7 @@ app.use(helmet());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100, // Giới hạn 100 yêu cầu mỗi IP
+    max: 10000,
   })
 );
 
@@ -56,16 +55,11 @@ app.use("/api/fines", fineRoutes);
 app.use("/api/library-cards", libraryCardRoutes);
 app.use("/api/racks", rackRoutes);
 app.use("/api/book-items", bookItemRoutes);
-
 app.use("/api/payments", paymentRoutes);
-
 app.use("/api/audit-logs", auditLogRoutes);
-
 app.use("/api/book-lendings", bookLendingRoutes);
 app.use("/api/book-reservations", bookReservationRoutes);
 app.use("/api/notifications", notificationRoutes);
-
 app.use("/api/categories", categoryRoutes);
-
 
 module.exports = app;
