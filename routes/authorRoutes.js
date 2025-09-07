@@ -20,6 +20,8 @@ router.put(
 
 router.get("/search", authenticate, authorController.searchAuthors);
 
+router.get("/", authenticate, authorController.getAllAuthors);
+
 router.get("/:id", authenticate, authorController.getAuthor);
 
 router.get("/:id/books", authenticate, authorController.getBooksByAuthor);
