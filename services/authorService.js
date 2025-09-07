@@ -1,5 +1,5 @@
-const Author = require('../models/Author');
-const Book = require('../models/Book');
+const Author = require("../models/Author");
+const Book = require("../models/Book");
 
 exports.createAuthor = async (data) => {
   const { name, description, birthDate, nationality } = data;
@@ -27,7 +27,7 @@ exports.updateAuthor = async (id, data) => {
 exports.getAllAuthors = async () => {
   const authors = await Author.find().populate("books");
 
-  return authors.map(author => ({
+  return authors.map((author) => ({
     authorId: author._id,
     name: author.name,
     description: author.description,
@@ -38,19 +38,19 @@ exports.getAllAuthors = async () => {
 };
 
 exports.getAuthor = async (id) => {
-  const author = await Author.findById(id).populate('books');
+  const author = await Author.findById(id).populate("books");
   if (!author) throw new Error("Author not found");
   return author;
 };
 
 exports.getBooksByAuthor = async (authorId) => {
   const books = await Book.find({ authors: authorId });
-  return books.map(book => ({
+  return books.map((book) => ({
     bookId: book._id,
     title: book.title,
     categories: book.categories,
-    ISBN: book.ISBN,
-    phublisher: book.phublisher,
+    ISBN: book.isbn,
+    phublisher: book.publisher,
     publicationDate: book.publicationDate,
     language: book.language,
     numberOfPages: book.numberOfPages,
@@ -58,13 +58,15 @@ exports.getBooksByAuthor = async (authorId) => {
     authors: book.authors,
     digitalUrl: book.digitalUrl,
     coverImage: book.coverImage,
-  }));;
+  }));
 };
 
 exports.searchAuthors = async (name) => {
-  const authors = await Author.find({ name: { $regex: name, $options: "i" } }).populate('books');
+  const authors = await Author.find({
+    name: { $regex: name, $options: "i" },
+  }).populate("books");
 
-  return authors.map(author => ({
+  return authors.map((author) => ({
     authorId: author._id,
     name: author.name,
     description: author.description,
@@ -83,5 +85,17 @@ exports.deleteAuthor = async (id) => {
 
   author.isDeleted = true;
   await author.save();
+  return true;
+};
+
+exports.hardDeleteAuthor = async (id) => {
+  const author = await Author.findById(id);
+  if (!author) throw new Error("Author not found");
+
+  if (author.books && author.books.length > 0) {
+    throw new Error("Author cannot be deleted: still referenced by books");
+  }
+
+  await Author.deleteOne({ _id: id });
   return true;
 };
