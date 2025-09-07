@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const AuditLog = require("./AuditLog");
 
 const AuthorSchema = new mongoose.Schema(
   {
@@ -11,5 +12,20 @@ const AuthorSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+AuthorSchema.statics.logAction = async function (
+  userId,
+  action,
+  target,
+  details
+) {
+  await AuditLog.create({
+    user: userId,
+    action,
+    target,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 module.exports = mongoose.model("Author", AuthorSchema);

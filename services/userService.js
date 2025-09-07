@@ -257,6 +257,31 @@ async function deleteUser(userId, requestingUser) {
   return { message: "User deleted" };
 }
 
+async function absoluteDeleteUser(userId, requestingUser) {
+  const user = await User.findOne(
+    { _id: userId, isDeleted: true }
+  );
+  if (!user) {
+    throw createError(404, "User not found");
+  }
+
+  await User.logAction(
+    requestingUser.userId,
+    "delete_user",
+    { id: user._id, model: "User" },
+    "User absolutely deleted"
+  );
+  await Notification.create({
+    member: user._id,
+    content: `Your account has been absolutely deleted.`,
+    type: "email",
+  });
+
+  await user.deleteOne();
+
+  return { message: "User absolutely deleted" };
+}
+
 // Request password reset with 6-char token
 async function requestPasswordReset(email) {
   if (typeof email !== "string") {
@@ -355,6 +380,7 @@ module.exports = {
   toggleAccountStatus,
   changePassword,
   deleteUser,
+  absoluteDeleteUser,
   requestPasswordReset,
   resetPassword,
 };

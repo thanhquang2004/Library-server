@@ -5,6 +5,7 @@ const {
   getAllRacks,
   getBooksOnRack,
   deleteRack,
+  absoluteDeleteRack
 } = require("../services/rackService");
 const { validateCreateRack, validateUpdateRack } = require("../utils/validate");
 
@@ -66,6 +67,15 @@ exports.getBooksOnRack = async (req, res, next) => {
 exports.deleteRack = async (req, res, next) => {
   try {
     const result = await deleteRack(req.params.id, req.user);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.absoluteDeleteRack = async (req, res, next) => {
+  try {
+    const result = await absoluteDeleteRack(req.params.id, req.user);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

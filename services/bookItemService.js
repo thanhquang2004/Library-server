@@ -244,7 +244,7 @@ async function deleteBookItem(bookItemId, requestingUser) {
   const book = await Book.findById(bookItem.book);
   await BookItem.logAction(
     requestingUser.userId,
-    "delete_book_item",
+    "soft_delete_book_item",
     { id: bookItem._id, model: "BookItem" },
     "Book item soft deleted"
   );
@@ -269,5 +269,5 @@ module.exports = {
   getBookItemByBarcode,
   getAllBookItems,
   updateBookItemStatus,
-  deleteBookItem,
+  deleteBookItem
 };

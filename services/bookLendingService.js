@@ -9,7 +9,7 @@ function validateObjectId(id, name = "id") {
     }
 }
 
-async function createLending({ bookItemId, memberId, dueDate }) {
+async function createLending({ bookItemId, memberId, dueDate, requestingUser }) {
     validateObjectId(bookItemId, "bookItemId");
     validateObjectId(memberId, "memberId");
 
@@ -41,6 +41,25 @@ async function createLending({ bookItemId, memberId, dueDate }) {
     bookItem.status = "loaned";
     await bookItem.save();
 
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "create_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending created"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending created for item "${bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
     return {
         bookLendingId: lending._id,
         bookItem: lending.bookItem,
@@ -53,7 +72,7 @@ async function createLending({ bookItemId, memberId, dueDate }) {
     };
 }
 
-async function returnBook(id) {
+async function returnBook(id, requestingUser) {
     validateObjectId(id, "lendingId");
 
     const lending = await BookLending.findById(id).populate("bookItem");
@@ -62,6 +81,25 @@ async function returnBook(id) {
     lending.returnDate = new Date();
     lending.status = "returned";
     await lending.save();
+
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "return_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending returned"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending returned for item "${bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
 
     if (lending.bookItem) {
         lending.bookItem.status = "available";
@@ -75,7 +113,7 @@ async function returnBook(id) {
     };
 }
 
-async function extendLending(id, newDueDate) {
+async function extendLending(id, newDueDate, requestingUser) {
     validateObjectId(id, "lendingId");
 
     const lending = await BookLending.findById(id);
@@ -85,16 +123,54 @@ async function extendLending(id, newDueDate) {
     lending.dueDate = newDueDate;
     await lending.save();
 
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "extend_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending extended"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending extended for item "${lending._id}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
     return { bookLendingId: lending._id, dueDate: lending.dueDate };
 }
 
-async function checkOverdue(id) {
+async function checkOverdue(id, requestingUser) {
     validateObjectId(id, "lendingId");
 
     const lending = await BookLending.findById(id);
     if (!lending || lending.isDeleted) return null;
 
     const overdue = new Date() > new Date(lending.dueDate) && lending.status === "borrowed";
+
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "check_overdue",
+        { id: lending._id, model: "BookLending" },
+        "Book lending overdue checked"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending overdue checked for item "${lending._id}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
     return { bookLendingId: lending._id, overdue };
 }
 
@@ -147,7 +223,7 @@ async function getLendingById(id) {
     };
 }
 
-async function deleteLending(id) {
+async function deleteLending(id, requestingUser) {
     validateObjectId(id, "lendingId");
 
     const lending = await BookLending.findById(id);
@@ -155,6 +231,25 @@ async function deleteLending(id) {
 
     lending.isDeleted = true;
     await lending.save();
+
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+        requestingUser.userId,
+        "soft_delete_lending",
+        { id: lending._id, model: "BookLending" },
+        "Book lending soft deleted"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book lending soft deleted for item "${lending._id}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
     return lending;
 }
 

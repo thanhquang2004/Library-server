@@ -60,6 +60,13 @@ router.delete(
   userController.deleteUser
 );
 
+router.delete(
+  "/hardDelete/:id",
+  authenticate,
+  roleMiddleware(["admin"]),
+  userController.absoluteDeleteUser
+);
+
 router.post("/forgot-password", userController.forgotPassword);
 router.post("/reset-password", userController.resetPassword);
 

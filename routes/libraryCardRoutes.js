@@ -24,4 +24,7 @@ router.get("/user/:userId", authenticate,
 router.delete("/:cardNumber", authenticate,
     roleMiddleware(["librarian", "admin"]), libraryCardController.deleteCard);
 
+router.delete("/hardDelete/:cardNumber", authenticate,
+    roleMiddleware(["librarian", "admin"]), libraryCardController.absoluteDeleteCard);
+
 module.exports = router;

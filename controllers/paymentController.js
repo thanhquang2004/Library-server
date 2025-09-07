@@ -4,6 +4,7 @@ const {
   getPaymentsByMember,
   getAllPayments,
   deletePayment,
+  absoluteDeletePayment
 } = require("../services/paymentService");
 const { validateCreatePayment } = require("../utils/validate");
 
@@ -54,6 +55,15 @@ exports.getAllPayments = async (req, res, next) => {
 exports.deletePayment = async (req, res, next) => {
   try {
     const result = await deletePayment(req.params.id, req.user);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.absoluteDeletePayment = async (req, res, next) => {
+  try {
+    const result = await absoluteDeletePayment(req.params.id, req.user);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

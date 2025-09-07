@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const BookReservation = require("../models/BookReservation");
 const BookItem = require("../models/BookItem");
+const Notification = require("../models/Notification")
 
 function validateObjectId(id, name = "id") {
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -8,7 +9,7 @@ function validateObjectId(id, name = "id") {
     }
 }
 
-async function createReservation({ bookItemId, memberId }) {
+async function createReservation({ bookItemId, memberId, requestingUser }) {
     validateObjectId(bookItemId, "bookItemId");
     validateObjectId(memberId, "memberId");
 
@@ -32,6 +33,25 @@ async function createReservation({ bookItemId, memberId }) {
         isDeleted: false,
     });
 
+    // Log action and notify admins/librarians
+    await BookReservation.logAction(
+        requestingUser.userId,
+        "create_reservation",
+        { id: reservation._id, model: "BookReservation" },
+        "Book reservation created"
+    );
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Book reservation created for item "${bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
     return {
         reservationId: reservation._id,
         bookItemId: reservation.bookItem,
@@ -44,7 +64,7 @@ async function createReservation({ bookItemId, memberId }) {
     };
 }
 
-async function cancelReservation(reservationId) {
+async function cancelReservation(reservationId, requestingUser) {
     validateObjectId(reservationId, "reservationId");
 
     const reservation = await BookReservation.findById(reservationId);
@@ -53,10 +73,34 @@ async function cancelReservation(reservationId) {
     reservation.status = "cancelled";
     await reservation.save();
 
+    // Log action and notify member and admins/librarians
+    await BookReservation.logAction(
+        requestingUser.userId,
+        "cancel_reservation",
+        { id: reservation._id, model: "BookReservation" },
+        `Reservation ${reservation._id} cancelled`
+    );
+    await Notification.create({
+        member: reservation.member,
+        content: `Your reservation for book item "${reservation.bookItem.title}" has been cancelled.`,
+        type: "email",
+    });
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Reservation ${reservation._id} cancelled for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
     return { reservationId: reservation._id, status: reservation.status };
 }
 
-async function completeReservation(reservationId) {
+async function completeReservation(reservationId, requestingUser) {
     validateObjectId(reservationId, "reservationId");
 
     const reservation = await BookReservation.findById(reservationId);
@@ -65,6 +109,30 @@ async function completeReservation(reservationId) {
     reservation.status = "completed";
     reservation.reservationDate = new Date();
     await reservation.save();
+
+    // Log action and notify member and admins/librarians
+    await BookReservation.logAction(
+        requestingUser.userId,
+        "complete_reservation",
+        { id: reservation._id, model: "BookReservation" },
+        `Reservation ${reservation._id} completed`
+    );
+    await Notification.create({
+        member: reservation.member,
+        content: `Your reservation for book item "${reservation.bookItem.title}" has been completed.`,
+        type: "email",
+    });
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Reservation ${reservation._id} completed for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
 
     return {
         reservationId: reservation._id,
@@ -138,7 +206,7 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
     }));
 }
 
-async function softDeleteReservation(reservationId) {
+async function softDeleteReservation(reservationId, requestingUser) {
     validateObjectId(reservationId, "reservationId");
 
     const reservation = await BookReservation.findById(reservationId);
@@ -147,7 +215,31 @@ async function softDeleteReservation(reservationId) {
     reservation.isDeleted = true;
     await reservation.save();
 
-    return { message: "Reservation deleted" };
+    // Log action and notify member and admins/librarians
+    await BookReservation.logAction(
+        requestingUser.userId,
+        "soft_deleted_reservation",
+        { id: reservation._id, model: "BookReservation" },
+        `Reservation ${reservation._id} soft deleted`
+    );
+    await Notification.create({
+        member: reservation.member,
+        content: `Your reservation for book item "${reservation.bookItem.title}" has been soft deleted.`,
+        type: "email",
+    });
+    const adminsAndLibrarians = await User.find({
+        role: { $in: ["admin", "librarian"] },
+        isDeleted: false,
+    });
+    for (const user of adminsAndLibrarians) {
+        await Notification.create({
+            member: user._id,
+            content: `Reservation ${reservation._id} soft deleted for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+            type: "email",
+        });
+    }
+
+    return { message: "Reservation soft deleted" };
 }
 
 module.exports = {
@@ -157,5 +249,5 @@ module.exports = {
     checkExpiration,
     getUserReservations,
     getAllReservations,
-    softDeleteReservation,
+    softDeleteReservation
 };

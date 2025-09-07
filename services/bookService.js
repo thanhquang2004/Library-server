@@ -1,12 +1,29 @@
-const Book = require("../models/Book");
-const BookItem = require("../models/BookItem");
-const Author = require("../models/Author");
+const { Book, BookItem, Author, Notification } = require("../models/Book");
 
-exports.createBook = async (data) => {
+exports.createBook = async (data, requestingUser) => {
   if (!data.title || !data.isbn) throw new Error("Invalid data");
 
   const exists = await Book.findOne({ isbn: data.isbn, isDeleted: false });
   if (exists) throw new Error("Book with this isbn already exists");
+
+  // Log action and notify admins/librarians
+  await Book.logAction(
+    requestingUser.userId,
+    "created_book",
+    { id: book._id, model: "Book" },
+    "Book created"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Book "${book.title}" in library has been created.`,
+      type: "email",
+    });
+  }
 
   const book = new Book(data);
   await book.save();
@@ -22,9 +39,28 @@ exports.createBook = async (data) => {
   return book;
 };
 
-exports.updateBook = async (id, data) => {
+exports.updateBook = async (id, data, requestingUser) => {
   const book = await Book.findOne({ _id: id, isDeleted: false });
   if (!book) throw new Error("Book not found");
+
+  // Log action and notify admins/librarians
+  await Book.logAction(
+    requestingUser.userId,
+    "updated_book",
+    { id: book._id, model: "Book" },
+    "Book updated"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Book "${book.title}" in library has been updated.`,
+      type: "email",
+    });
+  }
 
   Object.assign(book, data);
   await book.save();
@@ -59,12 +95,31 @@ exports.checkAvailable = async (bookId) => {
   return { available: !!availableItem };
 };
 
-exports.deleteBook = async (bookId) => {
+exports.deleteBook = async (bookId, requestingUser) => {
   const relatedItems = await BookItem.findOne({ book: bookId });
   if (relatedItems) throw new Error("Cannot delete book with existing BookItems");
 
   const book = await Book.findOne({ _id: bookId, isDeleted: false });
   if (!book) throw new Error("Book not found");
+
+  // Log action and notify admins/librarians
+  await Book.logAction(
+    requestingUser.userId,
+    "Soft_deleted_book",
+    { id: book._id, model: "Book" },
+    "Book soft deleted"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Book "${book.title}" in library has been soft deleted.`,
+      type: "email",
+    });
+  }
 
   book.isDeleted = true;
   await book.save();
