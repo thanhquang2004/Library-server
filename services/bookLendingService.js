@@ -2,6 +2,8 @@ const BookLending = require("../models/BookLending");
 const BookItem = require("../models/BookItem");
 const BookReservation = require("../models/BookReservation");
 const mongoose = require("mongoose");
+const User = require("../models/User");
+const Notification = require("../models/Notification")
 
 function validateObjectId(id, name = "id") {
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -9,7 +11,7 @@ function validateObjectId(id, name = "id") {
   }
 }
 
-async function createLending({ bookItemId, memberId, dueDate, requestingUser }) {
+async function createLending({ bookItemId, memberId, dueDate }, requestingUser) {
   validateObjectId(bookItemId, "bookItemId");
   validateObjectId(memberId, "memberId");
 
@@ -96,7 +98,7 @@ async function returnBook(id, requestingUser) {
   for (const user of adminsAndLibrarians) {
     await Notification.create({
       member: user._id,
-      content: `Book lending returned for item "${bookItem.title}" by member "${user.name}".`,
+      content: `Book lending returned for item "${lending.bookItem.title}" by member "${user.name}".`,
       type: "email",
     });
   }
@@ -114,36 +116,49 @@ async function returnBook(id, requestingUser) {
 }
 
 async function extendLending(id, newDueDate, requestingUser) {
-  validateObjectId(id, "lendingId");
+  let lending;
+  try {
+    console.log(id, newDueDate, requestingUser)
+    validateObjectId(id, "lendingId");
 
-  const lending = await BookLending.findById(id);
-  if (!lending || lending.isDeleted) return null;
-  if (lending.status !== "borrowed") throw new Error("Cannot extend");
+    lending = await BookLending.findById(id);
+    if (!lending || lending.isDeleted) throw new Error("Lending not found");
+    if (lending.status !== "borrowed") throw new Error("Cannot extend");
 
-  lending.dueDate = newDueDate;
-  await lending.save();
+    const dueDateObj = new Date(newDueDate);
+    if (isNaN(dueDateObj.getTime())) throw new Error("Invalid due date");
+    lending.dueDate = dueDateObj;
+    await lending.save();
 
-  // Log action and notify admins/librarians
-  await BookLending.logAction(
-    requestingUser.userId,
-    "extend_lending",
-    { id: lending._id, model: "BookLending" },
-    "Book lending extended"
-  );
-  const adminsAndLibrarians = await User.find({
-    role: { $in: ["admin", "librarian"] },
-    isDeleted: false,
-  });
-  for (const user of adminsAndLibrarians) {
-    await Notification.create({
-      member: user._id,
-      content: `Book lending extended for item "${lending._id}" by member "${user.name}".`,
-      type: "email",
+    // Log action and notify admins/librarians
+    await BookLending.logAction(
+      requestingUser.userId,
+      "extend_lending",
+      { id: lending._id, model: "BookLending" },
+      "Book lending extended"
+    );
+
+    const adminsAndLibrarians = await User.find({
+      role: { $in: ["admin", "librarian"] },
+      isDeleted: false,
     });
-  }
 
-  return { bookLendingId: lending._id, dueDate: lending.dueDate };
+    for (const user of adminsAndLibrarians) {
+      await Notification.create({
+        member: user._id,
+        content: `Book lending extended for item "${lending._id}" by member "${user.name}".`,
+        type: "email",
+      });
+    }
+
+    return { bookLendingId: lending._id, dueDate: lending.dueDate };
+
+  } catch (error) {
+    console.log("Extend failed:", error);
+    throw error; // hoặc return null tuỳ cách xử lý
+  }
 }
+
 
 async function checkOverdue(id, requestingUser) {
   validateObjectId(id, "lendingId");
@@ -194,13 +209,11 @@ async function getLendings({ memberId, status, page = 1, limit = 10 }) {
     .skip((page - 1) * limit)
     .limit(limit);
 
-  console.log(lendings);
-
   return lendings.map((l) => ({
     lendingId: l._id,
     bookItem: l.bookItem,
     member: l.member,
-    lendingDate: l.lendingDate,
+    lendingDate: l.creationDate,
     dueDate: l.dueDate,
     returnDate: l.returnDate,
     status: l.status,

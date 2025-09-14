@@ -10,7 +10,7 @@ async function createLending(req, res) {
   if (error) return res.status(400).json({ error });
 
   try {
-    const lending = await service.createLending(req.body);
+    const lending = await service.createLending(req.body, req.user);
     return res.status(201).json(lending);
   } catch (err) {
     return res.status(400).json({ error: err.message });
@@ -18,7 +18,7 @@ async function createLending(req, res) {
 }
 
 async function returnBook(req, res) {
-  const lending = await service.returnBook(req.params.id);
+  const lending = await service.returnBook(req.params.id, req.user);
   if (!lending) return res.status(404).json({ error: "Lending not found" });
   return res.json({
     bookLendingId: lending.bookLendingId,
@@ -34,7 +34,8 @@ async function extendLending(req, res) {
   try {
     const lending = await service.extendLending(
       req.params.id,
-      req.body.newDueDate
+      req.body.newDueDate,
+      req.user
     );
     if (!lending) return res.status(404).json({ error: "Lending not found" });
     return res.json({
@@ -47,7 +48,7 @@ async function extendLending(req, res) {
 }
 
 async function checkOverdue(req, res) {
-  const result = await service.checkOverdue(req.params.id);
+  const result = await service.checkOverdue(req.params.id, req.user);
   if (!result) return res.status(404).json({ error: "Lending not found" });
   return res.json(result);
 }

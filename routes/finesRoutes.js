@@ -14,7 +14,7 @@ router.post(
 router.put(
   "/:id/paid",
   authenticate,
-  roleMiddleware(["librarian", "admin"]),
+  roleMiddleware(["librarian"]),
   fineController.markAsPaid
 );
 

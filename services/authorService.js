@@ -1,6 +1,7 @@
 const Author = require('../models/Author');
 const Book = require('../models/Book');
-const Notification = require('../models/Notification');
+const User = require("../models/User");
+const Notification = require("../models/Notification")
 
 exports.createAuthor = async (data, requestingUser) => {
   const { name, description, birthDate, nationality } = data;
