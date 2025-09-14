@@ -1,4 +1,4 @@
-const { Book, BookItem, Author, Notification } = require("../models/Book");
+const { Book, BookItem, Author, Notification } = require("../models");
 
 exports.createBook = async (data, requestingUser) => {
   if (!data.title || !data.isbn) throw new Error("Invalid data");
