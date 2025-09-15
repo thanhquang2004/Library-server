@@ -18,10 +18,13 @@ router.put("/:cardNumber/toggle-status", authenticate,
 
 // GET - get library card by userId
 router.get("/user/:userId", authenticate,
-    roleMiddleware(["librarian"]), libraryCardController.getCardByUserId);
+    roleMiddleware(["member", "librarian"]), libraryCardController.getCardByUserId);
 
 // DELETE - mark card as deleted
 router.delete("/:cardNumber", authenticate,
     roleMiddleware(["librarian", "admin"]), libraryCardController.deleteCard);
+
+router.delete("/hardDelete/:cardNumber", authenticate,
+    roleMiddleware(["librarian", "admin"]), libraryCardController.absoluteDeleteCard);
 
 module.exports = router;

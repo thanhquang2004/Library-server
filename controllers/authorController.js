@@ -1,4 +1,4 @@
-const authorService = require('../services/authorService');
+const authorService = require("../services/authorService");
 
 const {
   validateCreateAuthor,
@@ -10,13 +10,13 @@ exports.createAuthor = async (req, res) => {
     const { error } = validateCreateAuthor(req.body);
     if (error) throw new Error(error.details.map((d) => d.message).join(", "));
 
-    const author = await authorService.createAuthor(req.body);
+    const author = await authorService.createAuthor(req.body, req.user);
     res.status(201).json({
       name: author.name,
       description: author.description,
       birthDate: author.birthDate,
       nationality: author.nationality,
-      books: author.books
+      books: author.books,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -28,14 +28,14 @@ exports.updateAuthor = async (req, res) => {
     const { error } = validateUpdateAuthor(req.body);
     if (error) throw new Error(error.details.map((d) => d.message).join(", "));
 
-    const author = await authorService.updateAuthor(req.params.id, req.body);
+    const author = await authorService.updateAuthor(req.params.id, req.body, req.user);
     res.status(200).json({
       authorId: author.authorId,
       name: author.name,
       description: author.description,
       birthDate: author.birthDate,
       nationality: author.nationality,
-      books: author.books
+      books: author.books,
     });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
@@ -50,8 +50,8 @@ exports.getAuthor = async (req, res) => {
       name: author.name,
       description: author.description,
       nationality: author.nationality,
-      books: author.books
-    });;
+      books: author.books,
+    });
   } catch (err) {
     res.status(404).json({ error: err.message });
   }
@@ -86,9 +86,19 @@ exports.searchAuthors = async (req, res) => {
 
 exports.deleteAuthor = async (req, res) => {
   try {
-    await authorService.deleteAuthor(req.params.id);
+    await authorService.deleteAuthor(req.params.id, req.user);
     res.status(200).json({ message: "Author deleted (soft)" });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+exports.hardDeleteAuthor = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await authorService.hardDeleteAuthor(id);
+    res.status(200).json({ message: "Author hard deleted successful" });
+  } catch (err) {
+    next(err);
   }
 };

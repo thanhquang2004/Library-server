@@ -1,6 +1,6 @@
-const Fine = require('../models/Fine');
-
-exports.createFine = async ({ memberId, bookLendingId, amount, reason }) => {
+const { Fine, Notification, User } = require('../models');
+// services/fineService.js
+exports.createFine = async ({ memberId, bookLendingId, amount, reason }, requestingUser) => {
   if (!memberId || !bookLendingId || !amount) {
     throw new Error("Invalid data");
   }
@@ -10,19 +10,49 @@ exports.createFine = async ({ memberId, bookLendingId, amount, reason }) => {
     bookLending: bookLendingId,
     amount,
     reason,
-    created: new Date()
+    created: new Date(),
   });
 
   await fine.save();
 
+  // Populate nếu muốn
   const populatedFine = await fine.populate('bookLending');
+
+  // Log action & notifications (không await cũng được nếu muốn nhanh)
+  Fine.logAction(requestingUser.userId, "create_fine", { id: fine._id }, "fine created");
+
   return populatedFine;
 };
 
-exports.markAsPaid = async (fineId) => {
+
+exports.markAsPaid = async (fineId, requestingUser) => {
   const fine = await Fine.findById(fineId);
   if (!fine) {
     throw new Error("Fine not found");
+  }
+
+  // Log action and notify member and admins/librarians
+  await Fine.logAction(
+    requestingUser.userId,
+    "update_fine",
+    { id: fine._id, model: "Fine" },
+    "fine updated"
+  );
+  await Notification.create({
+    member: fine.member,
+    content: `The fine of ${fine.amount} for fine "${fine.reason}" has been deleted.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Fine of ${fine.amount} for fine "${fine.reason}" by ${user.name} has been updated.`,
+      type: "email",
+    });
   }
 
   fine.status = "paid";
@@ -50,33 +80,99 @@ exports.getUnpaidTotal = async (memberId) => {
 };
 
 exports.getFines = async ({ memberId, status }) => {
-  const query = {};
-  if (memberId) query.member = memberId;
-  if (status) query.status = status;
+  try {
+    const query = {};
+    if (memberId) query.member = memberId;
+    if (status) query.status = status;
 
-  const fines = await Fine.find(query).populate('member');
+    const fines = await Fine.find(query).populate('member');
 
-  return fines.map(fine => ({
-    fineId: fine._id,
-    member: {
-      _id: fine.member._id,
-      email: fine.member.email,
-      role: fine.member.role
-    },
-    amount: fine.amount,
-    reason: fine.reason,
-    status: fine.status
-  }));
+    // Trả dữ liệu ngay trong try
+    return fines.map(fine => ({
+      fineId: fine._id,
+      member: fine.member ? {
+        _id: fine.member._id,
+        email: fine.member.email,
+        role: fine.member.role
+      } : null,
+      amount: fine.amount,
+      reason: fine.reason,
+      status: fine.status
+    }));
+  } catch (error) {
+    console.error("Error fetching fines:", error);
+    // Ném error để controller trả 500
+    throw new Error("Cannot fetch fines");
+  }
 };
 
-exports.deleteFine = async (fineId) => {
+exports.deleteFine = async (fineId, requestingUser) => {
   const fine = await Fine.findById(fineId);
   if (!fine) {
     throw new Error('Fine not found');
   }
 
+  // Log action and notify member and admins/librarians
+  await Fine.logAction(
+    requestingUser.userId,
+    "deleted_fine",
+    { id: fine._id, model: "Fine" },
+    "fine deleted"
+  );
+  await Notification.create({
+    member: fine.member,
+    content: `The fine of ${fine.amount} for fine "${fine.reason}" has been deleted.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Fine of ${fine.amount} for fine "${fine.reason}" by ${user.name} has been deleted.`,
+      type: "email",
+    });
+  }
+
   fine.isDeleted = true;
   await fine.save();
+
+  return true;
+};
+
+exports.absoluteDeleteFine = async (fineId, requestingUser) => {
+  const fine = await Fine.findById(fineId);
+  if (!fine) {
+    throw new Error('Fine not found');
+  }
+
+  // Log action and notify member and admins/librarians
+  await Fine.logAction(
+    requestingUser.userId,
+    "Absolute_deleted_fine",
+    { id: fine._id, model: "Fine" },
+    "fine absolute deleted"
+  );
+  await Notification.create({
+    member: fine.member,
+    content: `The fine of ${fine.amount} for fine "${fine.reason}" has been absolutely deleted.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Fine of ${fine.amount} for fine "${fine.reason}" by ${user.name} has been absolutely deleted.`,
+      type: "email",
+    });
+  }
+
+  await fine.deleteOne();
 
   return true;
 };

@@ -14,7 +14,7 @@ router.post(
 router.put(
   "/:id/paid",
   authenticate,
-  roleMiddleware(["librarian", "admin"]),
+  roleMiddleware(["librarian"]),
   fineController.markAsPaid
 );
 
@@ -38,6 +38,13 @@ router.delete(
   authenticate,
   roleMiddleware(["librarian", "admin"]),
   fineController.deleteFine
+);
+
+router.delete(
+  "/hardDelete/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  fineController.absoluteDeleteFine
 );
 
 module.exports = router;

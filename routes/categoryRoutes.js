@@ -45,4 +45,12 @@ router.delete(
   categoryController.deleteCategory
 );
 
+// Delete category (librarian, admin)
+router.delete(
+  "/hardDelete/:id",
+  authMiddleware,
+  roleMiddleware(["librarian", "admin"]),
+  categoryController.hardDeleteCategory
+);
+
 module.exports = router;

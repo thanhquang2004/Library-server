@@ -244,7 +244,7 @@ async function deleteBookItem(bookItemId, requestingUser) {
   const book = await Book.findById(bookItem.book);
   await BookItem.logAction(
     requestingUser.userId,
-    "delete_book_item",
+    "soft_delete_book_item",
     { id: bookItem._id, model: "BookItem" },
     "Book item soft deleted"
   );
@@ -263,6 +263,38 @@ async function deleteBookItem(bookItemId, requestingUser) {
   return { message: "Book item deleted" };
 }
 
+// Hard delete a book item
+async function hardDeleteBookItem(bookItemId, requestingUser) {
+  const bookItem = await BookItem.findOne({ _id: bookItemId });
+  if (!bookItem) {
+    throw createError(404, "Book item not found");
+  }
+
+  await BookItem.deleteOne({ _id: bookItemId });
+
+  // Log action and notify admins/librarians
+  const book = await Book.findById(bookItem.book);
+  await BookItem.logAction(
+    requestingUser.userId,
+    "hard_delete_book_item",
+    { id: bookItem._id, model: "BookItem" },
+    "Book item hard deleted"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Book item "${bookItem.barcode}" for book "${book.title}" has been hard removed.`,
+      type: "email",
+    });
+  }
+
+  return { message: "Book item hard deleted successfull" };
+}
+
 module.exports = {
   createBookItem,
   updateBookItem,
@@ -270,4 +302,5 @@ module.exports = {
   getAllBookItems,
   updateBookItemStatus,
   deleteBookItem,
+  hardDeleteBookItem,
 };

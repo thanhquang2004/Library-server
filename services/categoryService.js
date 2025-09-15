@@ -250,7 +250,7 @@ async function deleteCategory(categoryId, requestingUser) {
   // Log action and notify admins/librarians
   await Category.logAction(
     requestingUser.userId,
-    "delete_category",
+    "Soft_delete_category",
     { id: category._id, model: "Category" },
     `Category ${category.name} deleted`
   );
@@ -266,7 +266,57 @@ async function deleteCategory(categoryId, requestingUser) {
     });
   }
 
-  return { message: "Category deleted" };
+  return { message: "Category soft deleted" };
+}
+
+// Delete a category (soft delete)
+async function hardDeleteCategory(categoryId, requestingUser) {
+  // Check for subcategories
+  const subcategories = await Category.findOne({
+    parent: categoryId,
+  });
+  if (subcategories) {
+    throw createError(400, "Cannot delete category with subcategories");
+  }
+
+  // Check for associated books
+  const category = await Category.findOne({
+    _id: categoryId,
+  });
+  if (!category) {
+    throw createError(404, "Category not found");
+  }
+  const books = await Book.findOne({
+    categories: category.name,
+    isDeleted: false,
+  });
+  if (books) {
+    throw createError(400, "Cannot delete category with associated books");
+  }
+
+  // Soft delete category
+  await Category.deleteOne({ _id: categoryId });
+
+  // Log action and notify admins/librarians
+  await Category.logAction(
+    requestingUser.userId,
+    "delete_category",
+    { id: category._id, model: "Category" },
+    `Category ${category.name} hard deleted`
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Category "${category.name}" has been hard deleted.`,
+      type: "email",
+    });
+  }
+
+  return { message: "Category hard deleted" };
 }
 
 module.exports = {
@@ -276,4 +326,5 @@ module.exports = {
   getBooksByCategory,
   getSubcategories,
   deleteCategory,
+  hardDeleteCategory,
 };

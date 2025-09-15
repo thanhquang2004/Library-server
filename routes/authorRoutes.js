@@ -33,4 +33,11 @@ router.delete(
   authorController.deleteAuthor
 );
 
+router.delete(
+  "/hardDelete/:id",
+  authenticate,
+  roleMiddleware(["librarian", "admin"]),
+  authorController.hardDeleteAuthor
+);
+
 module.exports = router;

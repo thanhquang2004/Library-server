@@ -43,4 +43,11 @@ router.delete(
   paymentController.deletePayment
 );
 
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  paymentController.absoluteDeletePayment
+);
+
 module.exports = router;
