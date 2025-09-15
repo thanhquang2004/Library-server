@@ -6,6 +6,7 @@ const {
 
 exports.createFine = async (req, res) => {
   try {
+    console.log("CON BODY: ", req.body)
     const { error } = validateCreateFine(req.body);
     if (error) throw new Error(error.details.map((d) => d.message).join(", "));
 
