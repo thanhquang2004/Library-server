@@ -10,7 +10,7 @@ exports.createAuthor = async (req, res) => {
     const { error } = validateCreateAuthor(req.body);
     if (error) throw new Error(error.details.map((d) => d.message).join(", "));
 
-    const author = await authorService.createAuthor(req.body);
+    const author = await authorService.createAuthor(req.body, req.user);
     res.status(201).json({
       name: author.name,
       description: author.description,
@@ -28,7 +28,7 @@ exports.updateAuthor = async (req, res) => {
     const { error } = validateUpdateAuthor(req.body);
     if (error) throw new Error(error.details.map((d) => d.message).join(", "));
 
-    const author = await authorService.updateAuthor(req.params.id, req.body);
+    const author = await authorService.updateAuthor(req.params.id, req.body, req.user);
     res.status(200).json({
       authorId: author.authorId,
       name: author.name,
@@ -86,7 +86,7 @@ exports.searchAuthors = async (req, res) => {
 
 exports.deleteAuthor = async (req, res) => {
   try {
-    await authorService.deleteAuthor(req.params.id);
+    await authorService.deleteAuthor(req.params.id, req.user);
     res.status(200).json({ message: "Author deleted (soft)" });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const BookReservation = require("../models/BookReservation");
 const BookItem = require("../models/BookItem");
+const User = require("../models/User");
 const Notification = require("../models/Notification")
 
 function validateObjectId(id, name = "id") {
@@ -10,62 +11,62 @@ function validateObjectId(id, name = "id") {
 }
 
 async function createReservation({ bookItemId, memberId, requestingUser }) {
-    validateObjectId(bookItemId, "bookItemId");
-    validateObjectId(memberId, "memberId");
+  validateObjectId(bookItemId, "bookItemId");
+  validateObjectId(memberId, "memberId");
 
-    const bookItem = await BookItem.findOne({ _id: { $eq: bookItemId } });
+  const bookItem = await BookItem.findOne({ _id: { $eq: bookItemId } });
 
-    if (!bookItem || bookItem.status !== "available") {
-        return { error: "Book not reservable" };
-    }
+  if (!bookItem || bookItem.status !== "available") {
+    return { error: "Book not reservable" };
+  }
 
-    const now = new Date();
-    const expirationDate = new Date(now);
-    expirationDate.setDate(now.getDate() + 1);
+  const now = new Date();
+  const expirationDate = new Date(now);
+  expirationDate.setDate(now.getDate() + 1);
 
-    const reservation = await BookReservation.create({
-        bookItem: bookItemId,
-        member: memberId,
-        creationDate: now,
-        reservationDate: now,
-        expirationDate,
-        status: "pending",
-        isDeleted: false,
+  const reservation = await BookReservation.create({
+    bookItem: bookItemId,
+    member: memberId,
+    creationDate: now,
+    reservationDate: now,
+    expirationDate,
+    status: "pending",
+    isDeleted: false,
+  });
+
+  // Log action and notify admins/librarians
+  await BookReservation.logAction(
+    requestingUser.userId,
+    "create_reservation",
+    { id: reservation._id, model: "BookReservation" },
+    "Book reservation created"
+  );
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
+    await Notification.create({
+      member: user._id,
+      content: `Book reservation created for item "${bookItem.title}" by member "${user.name}".`,
+      type: "email",
     });
+  }
 
-    // Log action and notify admins/librarians
-    await BookReservation.logAction(
-        requestingUser.userId,
-        "create_reservation",
-        { id: reservation._id, model: "BookReservation" },
-        "Book reservation created"
-    );
-    const adminsAndLibrarians = await User.find({
-        role: { $in: ["admin", "librarian"] },
-        isDeleted: false,
-    });
-    for (const user of adminsAndLibrarians) {
-        await Notification.create({
-            member: user._id,
-            content: `Book reservation created for item "${bookItem.title}" by member "${user.name}".`,
-            type: "email",
-        });
-    }
-
-    return {
-        reservationId: reservation._id,
-        bookItemId: reservation.bookItem,
-        memberId: reservation.member._id,
-        creationDate: reservation.creationDate,
-        reservationDate: reservation.reservationDate,
-        expirationDate: reservation.expirationDate,
-        status: reservation.status,
-        isDeleted: reservation.isDeleted,
-    };
+  return {
+    reservationId: reservation._id,
+    bookItemId: reservation.bookItem,
+    memberId: reservation.member._id,
+    creationDate: reservation.creationDate,
+    reservationDate: reservation.reservationDate,
+    expirationDate: reservation.expirationDate,
+    status: reservation.status,
+    isDeleted: reservation.isDeleted,
+  };
 }
 
 async function cancelReservation(reservationId, requestingUser) {
-    validateObjectId(reservationId, "reservationId");
+  validateObjectId(reservationId, "reservationId");
 
   const reservation = await BookReservation.findById(reservationId);
   if (!reservation) return { error: "Reservation not found" };
@@ -73,35 +74,35 @@ async function cancelReservation(reservationId, requestingUser) {
   reservation.status = "cancelled";
   await reservation.save();
 
-    // Log action and notify member and admins/librarians
-    await BookReservation.logAction(
-        requestingUser.userId,
-        "cancel_reservation",
-        { id: reservation._id, model: "BookReservation" },
-        `Reservation ${reservation._id} cancelled`
-    );
+  // Log action and notify member and admins/librarians
+  await BookReservation.logAction(
+    requestingUser.userId,
+    "cancel_reservation",
+    { id: reservation._id, model: "BookReservation" },
+    `Reservation ${reservation._id} cancelled`
+  );
+  await Notification.create({
+    member: reservation.member,
+    content: `Your reservation for book item "${reservation.bookItem.title}" has been cancelled.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
     await Notification.create({
-        member: reservation.member,
-        content: `Your reservation for book item "${reservation.bookItem.title}" has been cancelled.`,
-        type: "email",
+      member: user._id,
+      content: `Reservation ${reservation._id} cancelled for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+      type: "email",
     });
-    const adminsAndLibrarians = await User.find({
-        role: { $in: ["admin", "librarian"] },
-        isDeleted: false,
-    });
-    for (const user of adminsAndLibrarians) {
-        await Notification.create({
-            member: user._id,
-            content: `Reservation ${reservation._id} cancelled for book item "${reservation.bookItem.title}" by member "${user.name}".`,
-            type: "email",
-        });
-    }
+  }
 
-    return { reservationId: reservation._id, status: reservation.status };
+  return { reservationId: reservation._id, status: reservation.status };
 }
 
 async function completeReservation(reservationId, requestingUser) {
-    validateObjectId(reservationId, "reservationId");
+  validateObjectId(reservationId, "reservationId");
 
   const reservation = await BookReservation.findById(reservationId);
   if (!reservation) return { error: "Reservation not found" };
@@ -110,35 +111,35 @@ async function completeReservation(reservationId, requestingUser) {
   reservation.reservationDate = new Date();
   await reservation.save();
 
-    // Log action and notify member and admins/librarians
-    await BookReservation.logAction(
-        requestingUser.userId,
-        "complete_reservation",
-        { id: reservation._id, model: "BookReservation" },
-        `Reservation ${reservation._id} completed`
-    );
+  // Log action and notify member and admins/librarians
+  await BookReservation.logAction(
+    requestingUser.userId,
+    "complete_reservation",
+    { id: reservation._id, model: "BookReservation" },
+    `Reservation ${reservation._id} completed`
+  );
+  await Notification.create({
+    member: reservation.member,
+    content: `Your reservation for book item "${reservation.bookItem.title}" has been completed.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
     await Notification.create({
-        member: reservation.member,
-        content: `Your reservation for book item "${reservation.bookItem.title}" has been completed.`,
-        type: "email",
+      member: user._id,
+      content: `Reservation ${reservation._id} completed for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+      type: "email",
     });
-    const adminsAndLibrarians = await User.find({
-        role: { $in: ["admin", "librarian"] },
-        isDeleted: false,
-    });
-    for (const user of adminsAndLibrarians) {
-        await Notification.create({
-            member: user._id,
-            content: `Reservation ${reservation._id} completed for book item "${reservation.bookItem.title}" by member "${user.name}".`,
-            type: "email",
-        });
-    }
+  }
 
-    return {
-        reservationId: reservation._id,
-        status: reservation.status,
-        reservationDate: reservation.reservationDate,
-    };
+  return {
+    reservationId: reservation._id,
+    status: reservation.status,
+    reservationDate: reservation.reservationDate,
+  };
 }
 
 async function checkExpiration(reservationId) {
@@ -216,7 +217,7 @@ async function getAllReservations({ memberId, status, page = 1, limit = 10 }) {
 }
 
 async function softDeleteReservation(reservationId, requestingUser) {
-    validateObjectId(reservationId, "reservationId");
+  validateObjectId(reservationId, "reservationId");
 
   const reservation = await BookReservation.findById(reservationId);
   if (!reservation) return { error: "Reservation not found" };
@@ -234,39 +235,39 @@ async function hardDeleteReservation(reservationId) {
   if (!reservation) return { error: "Reservation not found" };
   await BookReservation.deleteOne({ _id: reservationId });
 
-    // Log action and notify member and admins/librarians
-    await BookReservation.logAction(
-        requestingUser.userId,
-        "soft_deleted_reservation",
-        { id: reservation._id, model: "BookReservation" },
-        `Reservation ${reservation._id} soft deleted`
-    );
+  // Log action and notify member and admins/librarians
+  await BookReservation.logAction(
+    requestingUser.userId,
+    "soft_deleted_reservation",
+    { id: reservation._id, model: "BookReservation" },
+    `Reservation ${reservation._id} soft deleted`
+  );
+  await Notification.create({
+    member: reservation.member,
+    content: `Your reservation for book item "${reservation.bookItem.title}" has been soft deleted.`,
+    type: "email",
+  });
+  const adminsAndLibrarians = await User.find({
+    role: { $in: ["admin", "librarian"] },
+    isDeleted: false,
+  });
+  for (const user of adminsAndLibrarians) {
     await Notification.create({
-        member: reservation.member,
-        content: `Your reservation for book item "${reservation.bookItem.title}" has been soft deleted.`,
-        type: "email",
+      member: user._id,
+      content: `Reservation ${reservation._id} soft deleted for book item "${reservation.bookItem.title}" by member "${user.name}".`,
+      type: "email",
     });
-    const adminsAndLibrarians = await User.find({
-        role: { $in: ["admin", "librarian"] },
-        isDeleted: false,
-    });
-    for (const user of adminsAndLibrarians) {
-        await Notification.create({
-            member: user._id,
-            content: `Reservation ${reservation._id} soft deleted for book item "${reservation.bookItem.title}" by member "${user.name}".`,
-            type: "email",
-        });
-    }
+  }
 
-    return { message: "Reservation soft deleted" };
+  return { message: "Reservation soft deleted" };
 }
 
 module.exports = {
-    createReservation,
-    cancelReservation,
-    completeReservation,
-    checkExpiration,
-    getUserReservations,
-    getAllReservations,
-    softDeleteReservation
+  createReservation,
+  cancelReservation,
+  completeReservation,
+  checkExpiration,
+  getUserReservations,
+  getAllReservations,
+  softDeleteReservation
 };

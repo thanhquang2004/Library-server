@@ -18,7 +18,7 @@ router.put("/:cardNumber/toggle-status", authenticate,
 
 // GET - get library card by userId
 router.get("/user/:userId", authenticate,
-    roleMiddleware(["librarian"]), libraryCardController.getCardByUserId);
+    roleMiddleware(["member", "librarian"]), libraryCardController.getCardByUserId);
 
 // DELETE - mark card as deleted
 router.delete("/:cardNumber", authenticate,

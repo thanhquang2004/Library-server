@@ -40,7 +40,7 @@ router.get(
 router.get(
   "/",
   authenticate,
-  roleMiddleware(["librarian", "admin"]),
+  roleMiddleware(["member", "librarian", "admin"]),
   controller.getLendings
 );
 
